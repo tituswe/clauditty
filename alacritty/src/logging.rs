@@ -1,4 +1,4 @@
-//! Logging for Alacritty.
+//! Logging for Titty.
 //!
 //! The main executable is supposed to call `initialize()` exactly once during
 //! startup. All logging messages are written to stdout, given that their
@@ -20,40 +20,40 @@ use crate::event::{Event, EventType};
 use crate::message_bar::{Message, MessageType};
 
 /// Logging target for IPC config error messages.
-pub const LOG_TARGET_IPC_CONFIG: &str = "alacritty_log_window_config";
+pub const LOG_TARGET_IPC_CONFIG: &str = "titty_log_window_config";
 
 /// Name for the environment variable containing the log file's path.
-const ALACRITTY_LOG_ENV: &str = "ALACRITTY_LOG";
+const TITTY_LOG_ENV: &str = "TITTY_LOG";
 
 /// Logging target for config error messages.
 pub const LOG_TARGET_CONFIG: &str = "alacritty_config_derive";
 
 /// Logging target for winit events.
-pub const LOG_TARGET_WINIT: &str = "alacritty_winit_event";
+pub const LOG_TARGET_WINIT: &str = "titty_winit_event";
 
 /// Name for the environment variable containing extra logging targets.
 ///
 /// The targets are semicolon separated.
-const ALACRITTY_EXTRA_LOG_TARGETS_ENV: &str = "ALACRITTY_EXTRA_LOG_TARGETS";
+const TITTY_EXTRA_LOG_TARGETS_ENV: &str = "TITTY_EXTRA_LOG_TARGETS";
 
 /// User configurable extra log targets to include.
 fn extra_log_targets() -> &'static [String] {
     static EXTRA_LOG_TARGETS: OnceLock<Vec<String>> = OnceLock::new();
 
     EXTRA_LOG_TARGETS.get_or_init(|| {
-        env::var(ALACRITTY_EXTRA_LOG_TARGETS_ENV)
+        env::var(TITTY_EXTRA_LOG_TARGETS_ENV)
             .map_or(Vec::new(), |targets| targets.split(';').map(ToString::to_string).collect())
     })
 }
 
-/// List of targets which will be logged by Alacritty.
+/// List of targets which will be logged by Titty.
 const ALLOWED_TARGETS: &[&str] = &[
     LOG_TARGET_IPC_CONFIG,
     LOG_TARGET_CONFIG,
     LOG_TARGET_WINIT,
     "alacritty_config_derive",
     "alacritty_terminal",
-    "alacritty",
+    "titty",
     "crossfont",
 ];
 
@@ -105,9 +105,9 @@ impl Logger {
         };
 
         #[cfg(not(windows))]
-        let env_var = format!("${ALACRITTY_LOG_ENV}");
+        let env_var = format!("${TITTY_LOG_ENV}");
         #[cfg(windows)]
-        let env_var = format!("%{}%", ALACRITTY_LOG_ENV);
+        let env_var = format!("%{}%", TITTY_LOG_ENV);
 
         let message = format!(
             "[{}] {}\nSee log at {} ({})",
@@ -198,10 +198,10 @@ struct OnDemandLogFile {
 impl OnDemandLogFile {
     fn new() -> Self {
         let mut path = env::temp_dir();
-        path.push(format!("Alacritty-{}.log", process::id()));
+        path.push(format!("Titty-{}.log", process::id()));
 
         // Set log path as an environment variable.
-        unsafe { env::set_var(ALACRITTY_LOG_ENV, path.as_os_str()) };
+        unsafe { env::set_var(TITTY_LOG_ENV, path.as_os_str()) };
 
         OnDemandLogFile { path, file: None, created: Arc::new(AtomicBool::new(false)) }
     }

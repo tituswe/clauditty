@@ -1,12 +1,12 @@
-ALACRITTY(1)
+TITTY(1)
 
 # NAME
 
-Alacritty - A fast, cross-platform, OpenGL terminal emulator.
+Titty - A fast, cross-platform, OpenGL terminal emulator.
 
 # SYNOPSIS
 
-Alacritty is a modern terminal emulator that comes with sensible defaults, but
+Titty is a modern terminal emulator that comes with sensible defaults, but
 allows for extensive configuration. By integrating with other applications,
 rather than reimplementing their functionality, it manages to provide a flexible
 set of features with high performance.
@@ -55,7 +55,7 @@ set of features with high performance.
 
 	On Wayland the general class sets the _app\_id_, while the instance class is ignored.
 
-	Default: _Alacritty,Alacritty_
+	Default: _Titty,Titty_
 
 *-e, --command* _<COMMAND>..._
 
@@ -65,28 +65,28 @@ set of features with high performance.
 
 	Specify alternative configuration file.
 
-	Alacritty doesn't create the config file for you, but it looks for one in the
+	Titty doesn't create the config file for you, but it looks for one in the
 	following locations on UNIX systems:
 
-		. _$XDG_CONFIG_HOME/alacritty/alacritty.toml_
-		. _$XDG_CONFIG_HOME/alacritty.toml_
-		. _$HOME/.config/alacritty/alacritty.toml_
-		. _$HOME/.alacritty.toml_
-		. _/etc/alacritty/alacritty.toml_
+		. _$XDG_CONFIG_HOME/titty/titty.toml_
+		. _$XDG_CONFIG_HOME/titty.toml_
+		. _$HOME/.config/titty/titty.toml_
+		. _$HOME/.titty.toml_
+		. _/etc/titty/titty.toml_
 
 	On Windows, the config file will be looked for in:
 
-		. _%APPDATA%\\alacritty\\alacritty.toml_
+		. _%APPDATA%\\titty\\titty.toml_
 
 *--embed* _<PARENT>_
 
-	X11 window ID to embed Alacritty within (decimal or hexadecimal with _0x_ prefix).
+	X11 window ID to embed Titty within (decimal or hexadecimal with _0x_ prefix).
 
 *-o, --option* _<OPTION>..._
 
 	Override configuration file options.
 
-	Example: _alacritty -o 'cursor.style="Beam"'_
+	Example: _titty -o 'cursor.style="Beam"'_
 
 *--socket* _<SOCKET>_
 
@@ -96,7 +96,7 @@ set of features with high performance.
 
 	Defines the window title.
 
-	Default: _Alacritty_
+	Default: _Titty_
 
 *--working-directory* _<WORKING_DIRECTORY>_
 
@@ -106,7 +106,7 @@ set of features with high performance.
 
 *msg*
 
-	Send IPC socket messages (see *alacritty-msg*(1)).
+	Send IPC socket messages (see *titty-msg*(1)).
 
 *migrate*
 
@@ -138,11 +138,11 @@ set of features with high performance.
 
 # SEE ALSO
 
-*alacritty-msg*(1), *alacritty*(5), *alacritty-bindings*(5), *alacritty-escapes*(7)
+*titty-msg*(1), *titty*(5), *titty-bindings*(5), *titty-escapes*(7)
 
 # BUGS
 
-Found a bug? Please report it at _https://github.com/alacritty/alacritty/issues_.
+Found a bug? Please report it at _https://github.com/tituswe/titty/issues_.
 
 # MAINTAINERS
 

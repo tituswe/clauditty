@@ -1,8 +1,8 @@
-ALACRITTY-ESCAPES(7)
+TITTY-ESCAPES(7)
 
-# Alacritty Escape Sequence Support
+# Titty Escape Sequence Support
 
-This list includes all escape sequences Alacritty currently supports.
+This list includes all escape sequences Titty currently supports.
 
 # Legend
 
@@ -266,11 +266,11 @@ brevity.
 
 # SEE ALSO
 
-*alacritty*(1), *alacritty-msg*(1), *alacritty*(5), *alacritty-bindings*(5)
+*titty*(1), *titty-msg*(1), *titty*(5), *titty-bindings*(5)
 
 # BUGS
 
-Found a bug? Please report it at _https://github.com/alacritty/alacritty/issues_.
+Found a bug? Please report it at _https://github.com/tituswe/titty/issues_.
 
 # MAINTAINERS
 

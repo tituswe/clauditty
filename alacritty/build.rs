@@ -24,7 +24,7 @@ fn main() {
     .unwrap();
 
     #[cfg(windows)]
-    embed_resource::compile("./windows/alacritty.rc", embed_resource::NONE)
+    embed_resource::compile("./windows/titty.rc", embed_resource::NONE)
         .manifest_required()
         .unwrap();
 }

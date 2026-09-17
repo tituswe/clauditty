@@ -98,7 +98,7 @@ impl EventListener for Mock {
 }
 
 fn ref_test(dir: &Path) {
-    let recording = read_u8(dir.join("alacritty.recording"));
+    let recording = read_u8(dir.join("titty.recording"));
     let serialized_size = fs::read_to_string(dir.join("size.json")).unwrap();
     let serialized_grid = fs::read_to_string(dir.join("grid.json")).unwrap();
     let serialized_cfg = fs::read_to_string(dir.join("config.json")).unwrap();

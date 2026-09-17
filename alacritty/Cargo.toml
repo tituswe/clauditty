@@ -1,12 +1,12 @@
 [package]
-name = "alacritty"
+name = "titty"
 version = "0.18.0-dev"
 authors = ["Christian Duerr <contact@christianduerr.com>", "Joe Wilm <joe@jwilm.com>"]
 license = "Apache-2.0"
 description = "A fast, cross-platform, OpenGL terminal emulator"
 readme = "README.md"
-homepage = "https://alacritty.org"
-repository = "https://github.com/alacritty/alacritty"
+homepage = "https://github.com/tituswe/titty"
+repository = "https://github.com/tituswe/titty"
 edition.workspace = true
 rust-version.workspace = true
 

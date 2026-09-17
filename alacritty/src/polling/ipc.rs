@@ -1,4 +1,4 @@
-//! Alacritty socket IPC.
+//! Titty socket IPC.
 
 use serde::{Deserialize, Serialize};
 use std::ffi::OsStr;
@@ -18,7 +18,7 @@ use crate::cli::{Options, SocketMessage};
 use crate::event::{Event, EventType};
 
 /// Environment variable name for the IPC socket path.
-const ALACRITTY_SOCKET_ENV: &str = "ALACRITTY_SOCKET";
+const TITTY_SOCKET_ENV: &str = "TITTY_SOCKET";
 
 /// IPC socket listener.
 pub struct IpcListener {
@@ -38,10 +38,10 @@ impl IpcListener {
         let socket = UnixListener::bind(path)?;
         socket.set_nonblocking(true)?;
 
-        // Register socket path as environment variable for `alacritty msg`.
-        unsafe { env::set_var(ALACRITTY_SOCKET_ENV, path.as_os_str()) };
+        // Register socket path as environment variable for `titty msg`.
+        unsafe { env::set_var(TITTY_SOCKET_ENV, path.as_os_str()) };
         if options.daemon {
-            println!("ALACRITTY_SOCKET={}; export ALACRITTY_SOCKET", path.display());
+            println!("TITTY_SOCKET={}; export TITTY_SOCKET", path.display());
         }
 
         Ok(Self { event_proxy, socket, data: Default::default() })
@@ -91,7 +91,7 @@ impl IpcListener {
     }
 }
 
-/// Send a message to the active Alacritty socket.
+/// Send a message to the active Titty socket.
 pub fn send_message(socket: Option<PathBuf>, message: SocketMessage) -> IoResult<()> {
     let mut socket = find_socket(socket)?;
 
@@ -152,7 +152,7 @@ fn send_reply_fallible(stream: &mut UnixStream, message: SocketReply) -> IoResul
 /// Directory for the IPC socket file.
 #[cfg(not(target_os = "macos"))]
 pub fn socket_dir() -> PathBuf {
-    xdg::BaseDirectories::with_prefix("alacritty")
+    xdg::BaseDirectories::with_prefix("titty")
         .get_runtime_directory()
         .map(ToOwned::to_owned)
         .ok()
@@ -178,7 +178,7 @@ fn find_socket(socket_path: Option<PathBuf>) -> IoResult<UnixStream> {
     }
 
     // Handle environment variable.
-    if let Ok(path) = env::var(ALACRITTY_SOCKET_ENV) {
+    if let Ok(path) = env::var(TITTY_SOCKET_ENV) {
         let socket_path = PathBuf::from(path);
         if let Ok(socket) = UnixStream::connect(socket_path) {
             return Ok(socket);
@@ -189,7 +189,7 @@ fn find_socket(socket_path: Option<PathBuf>) -> IoResult<UnixStream> {
     for entry in fs::read_dir(socket_dir())?.filter_map(|entry| entry.ok()) {
         let path = entry.path();
 
-        // Skip files that aren't Alacritty sockets.
+        // Skip files that aren't Titty sockets.
         let socket_prefix = socket_prefix();
         if path
             .file_name()
@@ -222,13 +222,13 @@ fn find_socket(socket_path: Option<PathBuf>) -> IoResult<UnixStream> {
 #[cfg(not(target_os = "macos"))]
 pub fn socket_prefix() -> String {
     let display = env::var("WAYLAND_DISPLAY").or_else(|_| env::var("DISPLAY")).unwrap_or_default();
-    format!("Alacritty-{}", display.replace('/', "-"))
+    format!("Titty-{}", display.replace('/', "-"))
 }
 
 /// File prefix matching all available sockets.
 #[cfg(target_os = "macos")]
 pub fn socket_prefix() -> String {
-    String::from("Alacritty")
+    String::from("Titty")
 }
 
 /// IPC socket replies.

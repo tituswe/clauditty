@@ -134,11 +134,11 @@ fn config_deserialize() {
     let mut warn_logs = logger.warn_logs.lock().unwrap();
     warn_logs.sort_unstable();
     assert_eq!(warn_logs.as_slice(), [
-        "Config warning: enom_error has been deprecated\nUse `alacritty migrate` to automatically \
+        "Config warning: enom_error has been deprecated\nUse `titty migrate` to automatically \
          resolve it",
-        "Config warning: field1 has been deprecated; use field2 instead\nUse `alacritty migrate` \
+        "Config warning: field1 has been deprecated; use field2 instead\nUse `titty migrate` \
          to automatically resolve it",
-        "Config warning: gone has been removed; it's gone\nUse `alacritty migrate` to \
+        "Config warning: gone has been removed; it's gone\nUse `titty migrate` to \
          automatically resolve it",
         "Unused config key: field3",
     ]);

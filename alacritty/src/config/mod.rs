@@ -220,7 +220,7 @@ pub fn deserialize_config(path: &Path, warn_pruned: bool) -> Result<Value> {
     let extension = path.extension().unwrap_or_default();
     if (extension == "yaml" || extension == "yml") && !contents.trim().is_empty() {
         warn!(
-            "YAML config {path:?} is deprecated, please migrate to TOML using `alacritty migrate`"
+            "YAML config {path:?} is deprecated, please migrate to TOML using `titty migrate`"
         );
 
         let mut value: serde_yaml::Value = serde_yaml::from_str(&contents)?;
@@ -364,27 +364,27 @@ fn prune_yaml_nulls(value: &mut serde_yaml::Value, warn_pruned: bool) {
 /// Get the location of the first found default config file paths
 /// according to the following order:
 ///
-/// 1. $XDG_CONFIG_HOME/alacritty/alacritty.toml
-/// 2. $XDG_CONFIG_HOME/alacritty.toml
-/// 3. $HOME/.config/alacritty/alacritty.toml
-/// 4. $HOME/.alacritty.toml
-/// 5. /etc/alacritty/alacritty.toml
+/// 1. $XDG_CONFIG_HOME/titty/titty.toml
+/// 2. $XDG_CONFIG_HOME/titty.toml
+/// 3. $HOME/.config/titty/titty.toml
+/// 4. $HOME/.titty.toml
+/// 5. /etc/titty/titty.toml
 #[cfg(not(windows))]
 pub fn installed_config(suffix: &str) -> Option<PathBuf> {
-    let file_name = format!("alacritty.{suffix}");
+    let file_name = format!("titty.{suffix}");
 
     // Try using XDG location by default.
-    xdg::BaseDirectories::with_prefix("alacritty")
+    xdg::BaseDirectories::with_prefix("titty")
         .find_config_file(&file_name)
         .or_else(|| xdg::BaseDirectories::new().find_config_file(&file_name))
         .or_else(|| {
             if let Ok(home) = env::var("HOME") {
-                // Fallback path: $HOME/.config/alacritty/alacritty.toml.
-                let fallback = PathBuf::from(&home).join(".config/alacritty").join(&file_name);
+                // Fallback path: $HOME/.config/titty/titty.toml.
+                let fallback = PathBuf::from(&home).join(".config/titty").join(&file_name);
                 if fallback.exists() {
                     return Some(fallback);
                 }
-                // Fallback path: $HOME/.alacritty.toml.
+                // Fallback path: $HOME/.titty.toml.
                 let hidden_name = format!(".{file_name}");
                 let fallback = PathBuf::from(&home).join(hidden_name);
                 if fallback.exists() {
@@ -392,15 +392,15 @@ pub fn installed_config(suffix: &str) -> Option<PathBuf> {
                 }
             }
 
-            let fallback = PathBuf::from("/etc/alacritty").join(&file_name);
+            let fallback = PathBuf::from("/etc/titty").join(&file_name);
             fallback.exists().then_some(fallback)
         })
 }
 
 #[cfg(windows)]
 pub fn installed_config(suffix: &str) -> Option<PathBuf> {
-    let file_name = format!("alacritty.{suffix}");
-    dirs::config_dir().map(|path| path.join("alacritty").join(file_name)).filter(|new| new.exists())
+    let file_name = format!("titty.{suffix}");
+    dirs::config_dir().map(|path| path.join("titty").join(file_name)).filter(|new| new.exists())
 }
 
 #[cfg(test)]

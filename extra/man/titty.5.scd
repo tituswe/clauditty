@@ -1,28 +1,28 @@
-ALACRITTY(5)
+TITTY(5)
 
 # NAME
 
-Alacritty - TOML configuration file format.
+Titty - TOML configuration file format.
 
 # SYNTAX
 
-Alacritty's configuration file uses the TOML format. The format's specification
+Titty's configuration file uses the TOML format. The format's specification
 can be found at _https://toml.io/en/v1.1.0_.
 
 # LOCATION
 
-Alacritty doesn't create the config file for you, but it looks for one in the
+Titty doesn't create the config file for you, but it looks for one in the
 following locations on UNIX systems:
 
-. _$XDG_CONFIG_HOME/alacritty/alacritty.toml_
-. _$XDG_CONFIG_HOME/alacritty.toml_
-. _$HOME/.config/alacritty/alacritty.toml_
-. _$HOME/.alacritty.toml_
-. _/etc/alacritty/alacritty.toml_
+. _$XDG_CONFIG_HOME/titty/titty.toml_
+. _$XDG_CONFIG_HOME/titty.toml_
+. _$HOME/.config/titty/titty.toml_
+. _$HOME/.titty.toml_
+. _/etc/titty/titty.toml_
 
 On Windows, the config file will be looked for in:
 
-. _%APPDATA%\\alacritty\\alacritty.toml_
+. _%APPDATA%\\titty\\titty.toml_
 
 # GENERAL
 
@@ -42,8 +42,8 @@ This section documents the *[general]* table of the configuration file.
 
 	Example:
 		import = [++
-	_"~/.config/alacritty/base16-dark.toml"_,++
-	_"~/.config/alacritty/keybindings.toml"_,++
+	_"~/.config/titty/base16-dark.toml"_,++
+	_"~/.config/titty/keybindings.toml"_,++
 	_"alacritty-theme/themes/gruvbox_dark.toml"_,++
 ]
 
@@ -62,15 +62,15 @@ This section documents the *[general]* table of the configuration file.
 
 *ipc_socket* = _true_ | _false_ # _(unix only)_
 
-	Offer IPC using _alacritty msg_
+	Offer IPC using _titty msg_
 
 	Default: _true_
 
 # ENV
 
 All key-value pairs in the *[env]* section will be added as environment variables
-for any process spawned by Alacritty, including its shell. Some entries may
-override variables set by alacritty itself.
+for any process spawned by Titty, including its shell. Some entries may
+override variables set by titty itself.
 
 Example:
 	*[env]*++
@@ -161,11 +161,11 @@ This section documents the *[window]* table of the configuration file.
 
 	Window title.
 
-	Default: _"Alacritty"_
+	Default: _"Titty"_
 
 *dynamic_title* = _true_ | _false_
 
-	Allow terminal applications to change Alacritty's window title.
+	Allow terminal applications to change Titty's window title.
 
 	Default: _true_
 
@@ -175,7 +175,7 @@ This section documents the *[window]* table of the configuration file.
 
 	On Wayland, *general* is used as _app\_id_ and *instance* is ignored.
 
-	Default: { instance = _"Alacritty"_, general = _"Alacritty"_ }
+	Default: { instance = _"Titty"_, general = _"Titty"_ }
 
 *decorations_theme_variant* = _"Dark"_ | _"Light"_ | _"None"_
 
@@ -285,7 +285,7 @@ macOS:     { family = _"Menlo"_,     style = _"Regular"_ }
 
 *builtin_box_drawing* = _true_ | _false_
 
-	When _true_, Alacritty will use a custom built-in font for box drawing
+	When _true_, Titty will use a custom built-in font for box drawing
 	characters (Unicode points _U+2500_ - _U+259F_), legacy computing symbols
 	(_U+1FB00_ - _U+1FB3B_), and powerline symbols (_U+E0B0_ - _U+E0B3_).
 
@@ -531,7 +531,7 @@ This section documents the *[selection]* table of the configuration file.
 *semantic_escape_chars* = _"<string>"_
 
 	This string contains all characters that are used as separators for
-	"semantic words" in Alacritty.
+	"semantic words" in Titty.
 
 	Default: _",│`|:\\"' ()[]{}<>\\t"_
 
@@ -640,7 +640,7 @@ This section documents the *[mouse]* table of the configuration file.
 	See _keyboard.bindings_ for full documentation on _mods_, _mode_, _command_,
 	_chars_, and _action_.
 
-	When an application running within Alacritty captures the mouse, the `Shift`
+	When an application running within Titty captures the mouse, the `Shift`
 	modifier can be used to suppress mouse reporting. If no action is found for
 	the event, actions for the event without the `Shift` modifier are triggered
 	instead.
@@ -830,17 +830,17 @@ _https://docs.rs/winit/latest/winit/keyboard/enum.Key.html#variant.Dead_
 		*ClearHistory*
 			Clear the display buffer(s) to remove history.
 		*Hide*
-			Hide the Alacritty window.
+			Hide the Titty window.
 		*Minimize*
-			Minimize the Alacritty window.
+			Minimize the Titty window.
 		*Quit*
-			Quit Alacritty.
+			Quit Titty.
 		*ClearLogNotice*
 			Clear warning and error notices.
 		*SpawnNewInstance*
-			Spawn a new instance of Alacritty.
+			Spawn a new instance of Titty.
 		*CreateNewWindow*
-			Create a new Alacritty window.
+			Create a new Titty window.
 		*ToggleFullscreen*
 			Toggle fullscreen.
 		*ToggleMaximized*
@@ -960,7 +960,7 @@ _https://docs.rs/winit/latest/winit/keyboard/enum.Key.html#variant.Dead_
 		*ToggleSimpleFullscreen*
 			Enter fullscreen without occupying another space.
 		*HideOtherApplications*
-			Hide all windows other than Alacritty.
+			Hide all windows other than Titty.
 		*CreateNewTab*
 			Create new window in a tab.
 		*SelectNextTab*
@@ -995,7 +995,7 @@ _https://docs.rs/winit/latest/winit/keyboard/enum.Key.html#variant.Dead_
 		*PasteSelection*
 			Paste from the selection buffer.
 
-Default: See *alacritty-bindings*(5)
+Default: See *titty-bindings*(5)
 
 Example:
 	*[keyboard]*++
@@ -1009,7 +1009,7 @@ bindings = [++
 
 This section documents the *[debug]* table of the configuration file.
 
-Debug options are meant to help troubleshoot issues with Alacritty. These can
+Debug options are meant to help troubleshoot issues with Titty. These can
 change or be removed entirely without warning, so their stability shouldn't be
 relied upon.
 
@@ -1021,7 +1021,7 @@ relied upon.
 
 *persistent_logging* = _true_ | _false_
 
-	Keep the log file after quitting Alacritty.
+	Keep the log file after quitting Titty.
 
 	Default: _false_
 
@@ -1029,11 +1029,11 @@ relied upon.
 
 	Default: _"Warn"_
 
-	To add extra libraries to logging _ALACRITTY_EXTRA_LOG_TARGETS_ variable
+	To add extra libraries to logging _TITTY_EXTRA_LOG_TARGETS_ variable
 	can be used.
 
 	Example:
-		_ALACRITTY_EXTRA_LOG_TARGETS="winit;vte" alacritty -vvv_
+		_TITTY_EXTRA_LOG_TARGETS="winit;vte" titty -vvv_
 
 *renderer* = _"glsl3"_ | _"gles2"_ | _"gles2pure"_ | _"None"_
 
@@ -1063,11 +1063,11 @@ relied upon.
 
 # SEE ALSO
 
-*alacritty*(1), *alacritty-msg*(1), *alacritty-bindings*(5), *alacritty-escapes*(7)
+*titty*(1), *titty-msg*(1), *titty-bindings*(5), *titty-escapes*(7)
 
 # BUGS
 
-Found a bug? Please report it at _https://github.com/alacritty/alacritty/issues_.
+Found a bug? Please report it at _https://github.com/tituswe/titty/issues_.
 
 # MAINTAINERS
 

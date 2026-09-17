@@ -257,7 +257,7 @@ pub struct DimColors {
 
 impl Default for DimColors {
     fn default() -> Self {
-        // Generated with builtin alacritty's color dimming function.
+        // Generated with builtin titty's color dimming function.
         DimColors {
             black: Rgb::new(0x0f, 0x0f, 0x0f),
             red: Rgb::new(0x71, 0x2b, 0x2b),

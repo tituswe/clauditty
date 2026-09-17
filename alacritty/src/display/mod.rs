@@ -489,7 +489,7 @@ impl Display {
 
         window.set_visible(true);
 
-        // Always focus new windows, even if no Alacritty window is currently focused.
+        // Always focus new windows, even if no Titty window is currently focused.
         #[cfg(target_os = "macos")]
         window.focus_window();
 
@@ -817,7 +817,7 @@ impl Display {
         // Invalidate highlighted hints if grid has changed.
         self.validate_hint_highlights(display_offset);
 
-        // Add damage from alacritty's UI elements overlapping terminal.
+        // Add damage from titty's UI elements overlapping terminal.
 
         let requires_full_damage = self.visual_bell.intensity() != 0.
             || self.hint_state.active()
@@ -1032,7 +1032,7 @@ impl Display {
 
         if matches!(self.raw_window_handle, RawWindowHandle::Xcb(_) | RawWindowHandle::Xlib(_)) {
             // On X11 `swap_buffers` does not block for vsync. However the next OpenGl command
-            // will block to synchronize (this is `glClear` in Alacritty), which causes a
+            // will block to synchronize (this is `glClear` in Titty), which causes a
             // permanent one frame delay.
             self.renderer.finish();
         }

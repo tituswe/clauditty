@@ -1,13 +1,13 @@
-ALACRITTY-BINDINGS(5)
+TITTY-BINDINGS(5)
 
 # NAME
 
-alacritty-bindings - Default configuration file bindings.
+titty-bindings - Default configuration file bindings.
 
 # SYNOPSIS
 
-This page documents all key and mouse bindings for the default Alacritty
-configuration. See *alacritty*(5) for full configuration format documentation.
+This page documents all key and mouse bindings for the default Titty
+configuration. See *titty*(5) for full configuration format documentation.
 
 # MOUSE BINDINGS
 
@@ -597,11 +597,11 @@ configuration. See *alacritty*(5) for full configuration format documentation.
 
 # SEE ALSO
 
-*alacritty*(1), *alacritty-msg*(1), *alacritty*(5), *alacritty-escapes*(7)
+*titty*(1), *titty-msg*(1), *titty*(5), *titty-escapes*(7)
 
 # BUGS
 
-Found a bug? Please report it at _https://github.com/alacritty/alacritty/issues_.
+Found a bug? Please report it at _https://github.com/tituswe/titty/issues_.
 
 # MAINTAINERS
 

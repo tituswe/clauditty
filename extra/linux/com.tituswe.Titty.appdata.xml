@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: MIT -->
 <component type="desktop-application">
-  <id>org.alacritty.Alacritty</id>
+  <id>com.tituswe.Titty</id>
 
   <developer_name>Christian Duerr</developer_name>
-  <developer id="org.alacritty">
+  <developer id="com.tituswe">
     <name>Christian Duerr</name>
   </developer>
 
-  <name>Alacritty</name>
+  <name>Titty</name>
 
   <project_license>Apache-2.0</project_license>
   <metadata_license>MIT</metadata_license>
@@ -16,7 +16,7 @@
   <summary>A cross-platform, OpenGL terminal emulator</summary>
   <description>
     <p>
-      Alacritty is a modern terminal emulator that comes with sensible defaults,
+      Titty is a modern terminal emulator that comes with sensible defaults,
       but allows for extensive configuration. By integrating with other
       applications, rather than reimplementing their functionality, it manages
       to provide a flexible set of features with high performance.
@@ -35,14 +35,14 @@
   <screenshots>
     <screenshot type="default">
       <image>https://raw.githubusercontent.com/alacritty/alacritty/0a1e735cf6b13da1dbe5d161d17c8aa6c1692204/extra/promo/alacritty-readme.png</image>
-      <caption>Alacritty with default theme showing neovim</caption>
+      <caption>Titty with default theme showing neovim</caption>
     </screenshot>
   </screenshots>
 
-  <url type="homepage">https://github.com/alacritty/alacritty</url>
-  <url type="bugtracker">https://github.com/alacritty/alacritty/issues</url>
+  <url type="homepage">https://github.com/tituswe/titty</url>
+  <url type="bugtracker">https://github.com/tituswe/titty/issues</url>
 
-  <launchable type="desktop-id">Alacritty.desktop</launchable>
+  <launchable type="desktop-id">Titty.desktop</launchable>
 
   <content_rating type="oars-1.0" />
 </component>

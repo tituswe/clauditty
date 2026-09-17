@@ -163,22 +163,22 @@ pub enum Action {
     /// Clear the display buffer(s) to remove history.
     ClearHistory,
 
-    /// Hide the Alacritty window.
+    /// Hide the Titty window.
     Hide,
 
-    /// Hide all windows other than Alacritty on macOS.
+    /// Hide all windows other than Titty on macOS.
     HideOtherApplications,
 
-    /// Minimize the Alacritty window.
+    /// Minimize the Titty window.
     Minimize,
 
-    /// Quit Alacritty.
+    /// Quit Titty.
     Quit,
 
     /// Clear warning and error notices.
     ClearLogNotice,
 
-    /// Spawn a new instance of Alacritty.
+    /// Spawn a new instance of Titty.
     SpawnNewInstance,
 
     /// Select next tab.
@@ -217,7 +217,7 @@ pub enum Action {
     /// Select the last tab.
     SelectLastTab,
 
-    /// Create a new Alacritty window.
+    /// Create a new Titty window.
     CreateNewWindow,
 
     /// Create new window in a tab.

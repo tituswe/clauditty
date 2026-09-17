@@ -516,7 +516,7 @@ impl ApplicationHandler<Event> for Processor {
     }
 }
 
-/// Alacritty events.
+/// Titty events.
 #[derive(Debug, Clone)]
 pub struct Event {
     /// Limit event to a specific window.
@@ -538,7 +538,7 @@ impl From<Event> for WinitEvent<Event> {
     }
 }
 
-/// Alacritty events.
+/// Titty events.
 #[derive(Debug, Clone)]
 pub enum EventType {
     Terminal(TerminalEvent),
@@ -856,11 +856,11 @@ impl<'a, N: Notify + 'a, T: EventListener> input::ActionContext<T> for ActionCon
 
     fn spawn_new_instance(&mut self) {
         let mut env_args = env::args();
-        let alacritty = env_args.next().unwrap();
+        let titty = env_args.next().unwrap();
 
         let mut args: Vec<String> = Vec::new();
 
-        // Reuse the arguments passed to Alacritty for the new instance.
+        // Reuse the arguments passed to Titty for the new instance.
         #[allow(clippy::while_let_on_iterator)]
         while let Some(arg) = env_args.next() {
             // New instances shouldn't inherit command.
@@ -878,7 +878,7 @@ impl<'a, N: Notify + 'a, T: EventListener> input::ActionContext<T> for ActionCon
             args.push(arg);
         }
 
-        self.spawn_daemon(&alacritty, &args);
+        self.spawn_daemon(&titty, &args);
     }
 
     #[cfg(not(windows))]

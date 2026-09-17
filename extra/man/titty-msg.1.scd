@@ -1,13 +1,13 @@
-ALACRITTY-MSG(1)
+TITTY-MSG(1)
 
 # NAME
 
-alacritty-msg - Send messages to Alacritty.
+titty-msg - Send messages to Titty.
 
 # SYNOPSIS
 
-This command communicates with running Alacritty instances through a socket,
-making it possible to control Alacritty without directly accessing it.
+This command communicates with running Titty instances through a socket,
+making it possible to control Titty without directly accessing it.
 
 # OPTIONS
 
@@ -19,7 +19,7 @@ making it possible to control Alacritty without directly accessing it.
 
 *create-window*
 
-	Create a new window in the same Alacritty process.
+	Create a new window in the same Titty process.
 
 	*FLAGS*
 		*--hold*
@@ -35,19 +35,19 @@ making it possible to control Alacritty without directly accessing it.
 
 			Defines the window title.
 
-			Default: _Alacritty_
+			Default: _Titty_
 
 		*--class* _<GENERAL>_ | _<GENERAL>_,_<INSTANCE>_
 
 			Defines window class/app_id on X11/Wayland.
 
-			Default: _Alacritty,Alacritty_
+			Default: _Titty,Titty_
 
 		*-o, --option* _<OPTION>..._
 
 			Override configuration file options.
 
-			Example: _alacritty msg create-window -o 'cursor.style="Beam"'_
+			Example: _titty msg create-window -o 'cursor.style="Beam"'_
 
 		*-e, --command* _<COMMAND>..._
 
@@ -55,14 +55,14 @@ making it possible to control Alacritty without directly accessing it.
 
 *config*
 
-	Update the Alacritty configuration.
+	Update the Titty configuration.
 
 	*ARGS*
 		*<CONFIG_OPTIONS>...*
 
 			Configuration file options.
 
-			Example: _alacritty msg config 'cursor.style="Beam"'_
+			Example: _titty msg config 'cursor.style="Beam"'_
 
 	*FLAGS*
 		*-r, --reset*
@@ -76,11 +76,11 @@ making it possible to control Alacritty without directly accessing it.
 
 			Use _-1_ to apply this change to all windows.
 
-			Default: _$ALACRITTY_WINDOW_ID_
+			Default: _$TITTY_WINDOW_ID_
 
 *get-config*
 
-	Read runtime Alacritty configuration.
+	Read runtime Titty configuration.
 
 	*OPTIONS*
 		*-w, --window-id* _<WINDOW_ID>_
@@ -89,15 +89,15 @@ making it possible to control Alacritty without directly accessing it.
 
 			Use _-1_ to get the global config.
 
-			Default: _$ALACRITTY_WINDOW_ID_
+			Default: _$TITTY_WINDOW_ID_
 
 # SEE ALSO
 
-*alacritty*(1), *alacritty*(5), *alacritty-bindings*(5), *alacritty-escapes*(7)
+*titty*(1), *titty*(5), *titty-bindings*(5), *titty-escapes*(7)
 
 # BUGS
 
-Found a bug? Please report it at _https://github.com/alacritty/alacritty/issues_.
+Found a bug? Please report it at _https://github.com/tituswe/titty/issues_.
 
 # MAINTAINERS
 

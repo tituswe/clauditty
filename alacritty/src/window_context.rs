@@ -44,7 +44,7 @@ use crate::message_bar::MessageBuffer;
 use crate::scheduler::Scheduler;
 use crate::{input, renderer};
 
-/// Event context for one individual Alacritty window.
+/// Event context for one individual Titty window.
 pub struct WindowContext {
     pub message_buffer: MessageBuffer,
     pub display: Display,
@@ -231,7 +231,7 @@ impl WindowContext {
             event_proxy.send_event(TerminalEvent::CursorBlinkingChange.into());
         }
 
-        // Create context for the Alacritty window.
+        // Create context for the Titty window.
         Ok(WindowContext {
             preserve_title,
             terminal,
@@ -377,7 +377,7 @@ impl WindowContext {
 
         // Request immediate re-draw if visual bell animation is not finished yet.
         if !self.display.visual_bell.completed() {
-            // We can get an OS redraw which bypasses alacritty's frame throttling, thus
+            // We can get an OS redraw which bypasses titty's frame throttling, thus
             // marking the window as dirty when we don't have frame yet.
             if self.display.window.has_frame {
                 self.display.window.request_redraw();
