@@ -6,7 +6,7 @@ if [ $# -lt 2 ]; then
     exit 1
 fi
 
-repo="tituswe/titty"
+repo="tituswe/clauditty"
 file_path=$1
 bearer=$2
 

@@ -31,54 +31,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "alacritty_config"
-version = "0.2.4-dev"
-dependencies = [
- "alacritty_config_derive",
- "log",
- "serde",
- "toml",
-]
-
-[[package]]
-name = "alacritty_config_derive"
-version = "0.2.6-dev"
-dependencies = [
- "alacritty_config",
- "log",
- "proc-macro2",
- "quote",
- "serde",
- "syn",
- "toml",
-]
-
-[[package]]
-name = "alacritty_terminal"
-version = "0.26.1-dev"
-dependencies = [
- "arrayvec",
- "base64",
- "bitflags 2.9.4",
- "home",
- "libc",
- "log",
- "miow",
- "parking_lot",
- "piper",
- "polling",
- "regex-automata",
- "rustix 1.1.2",
- "rustix-openpty",
- "serde",
- "serde_json",
- "signal-hook",
- "unicode-width",
- "vte",
- "windows-sys 0.59.0",
-]
-
-[[package]]
 name = "android-activity"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -343,6 +295,94 @@ name = "clap_lex"
 version = "0.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b94f61472cee1439c0b966b47e3aca9ae07e45d070759512cd390ea2bebc6675"
+
+[[package]]
+name = "clauditty"
+version = "0.18.0-dev"
+dependencies = [
+ "ahash",
+ "bitflags 2.9.4",
+ "clap",
+ "clap_complete",
+ "clauditty_config",
+ "clauditty_config_derive",
+ "clauditty_terminal",
+ "copypasta",
+ "crossfont",
+ "dirs",
+ "embed-resource",
+ "gl_generator",
+ "glutin",
+ "home",
+ "libc",
+ "log",
+ "notify",
+ "objc2 0.6.3",
+ "objc2-app-kit 0.3.2",
+ "objc2-foundation 0.3.2",
+ "parking_lot",
+ "png",
+ "polling",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "signal-hook",
+ "tempfile",
+ "toml",
+ "toml_edit 0.24.0+spec-1.1.0",
+ "unicode-width",
+ "windows-sys 0.59.0",
+ "winit",
+ "xdg",
+]
+
+[[package]]
+name = "clauditty_config"
+version = "0.2.4-dev"
+dependencies = [
+ "clauditty_config_derive",
+ "log",
+ "serde",
+ "toml",
+]
+
+[[package]]
+name = "clauditty_config_derive"
+version = "0.2.6-dev"
+dependencies = [
+ "clauditty_config",
+ "log",
+ "proc-macro2",
+ "quote",
+ "serde",
+ "syn",
+ "toml",
+]
+
+[[package]]
+name = "clauditty_terminal"
+version = "0.26.1-dev"
+dependencies = [
+ "arrayvec",
+ "base64",
+ "bitflags 2.9.4",
+ "home",
+ "libc",
+ "log",
+ "miow",
+ "parking_lot",
+ "piper",
+ "polling",
+ "regex-automata",
+ "rustix 1.1.2",
+ "rustix-openpty",
+ "serde",
+ "serde_json",
+ "signal-hook",
+ "unicode-width",
+ "vte",
+ "windows-sys 0.59.0",
+]
 
 [[package]]
 name = "clipboard-win"
@@ -1942,46 +1982,6 @@ dependencies = [
  "arrayref",
  "bytemuck",
  "strict-num",
-]
-
-[[package]]
-name = "titty"
-version = "0.18.0-dev"
-dependencies = [
- "ahash",
- "alacritty_config",
- "alacritty_config_derive",
- "alacritty_terminal",
- "bitflags 2.9.4",
- "clap",
- "clap_complete",
- "copypasta",
- "crossfont",
- "dirs",
- "embed-resource",
- "gl_generator",
- "glutin",
- "home",
- "libc",
- "log",
- "notify",
- "objc2 0.6.3",
- "objc2-app-kit 0.3.2",
- "objc2-foundation 0.3.2",
- "parking_lot",
- "png",
- "polling",
- "serde",
- "serde_json",
- "serde_yaml",
- "signal-hook",
- "tempfile",
- "toml",
- "toml_edit 0.24.0+spec-1.1.0",
- "unicode-width",
- "windows-sys 0.59.0",
- "winit",
- "xdg",
 ]
 
 [[package]]

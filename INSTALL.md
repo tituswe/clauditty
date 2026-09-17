@@ -1,12 +1,12 @@
 # Cargo Installation
 
-If you're just interested in the Titty binary and you don't need the
+If you're just interested in the Clauditty binary and you don't need the
 [terminfo file](#terminfo), [desktop entry](#desktop-entry),
 [manual page](#manual-page) or [shell completions](#shell-completions), you can
 install it directly through cargo:
 
 ```sh
-cargo install --path alacritty
+cargo install --path clauditty
 ```
 
 Note that you will still need to install the dependencies for your OS of choice.
@@ -50,11 +50,11 @@ Please refer to the [Dependencies](#dependencies) section.
 
 ### Clone the source code
 
-Before compiling Titty, you'll have to first clone the source code:
+Before compiling Clauditty, you'll have to first clone the source code:
 
 ```sh
-git clone https://github.com/tituswe/titty.git
-cd titty
+git clone https://github.com/tituswe/clauditty.git
+cd clauditty
 ```
 
 ### Install the Rust compiler with `rustup`
@@ -70,7 +70,7 @@ cd titty
 
 ### Dependencies
 
-These are the minimum dependencies required to build Titty, please note
+These are the minimum dependencies required to build Clauditty, please note
 that with some setups additional dependencies might be desired.
 
 If you're running Wayland with an Nvidia GPU, you'll likely want the EGL
@@ -79,7 +79,7 @@ drivers installed too (these are called `libegl1-mesa-dev` on Ubuntu).
 #### Debian/Ubuntu
 
 If you'd like to build a local version manually, you need a few extra libraries
-to build Titty. Here's an apt command that should install all of them. If
+to build Clauditty. Here's an apt command that should install all of them. If
 something is still found to be missing, please open an issue.
 
 ```sh
@@ -88,7 +88,7 @@ apt install cmake g++ pkg-config libfontconfig1-dev libxcb-xfixes0-dev libxkbcom
 
 #### Arch Linux
 
-On Arch Linux, you need a few extra libraries to build Titty. Here's a
+On Arch Linux, you need a few extra libraries to build Clauditty. Here's a
 `pacman` command that should install all of them. If something is still found
 to be missing, please open an issue.
 
@@ -98,7 +98,7 @@ pacman -S cmake freetype2 fontconfig pkg-config make libxcb libxkbcommon python
 
 #### Fedora
 
-On Fedora, you need a few extra libraries to build Titty. Here's a `dnf`
+On Fedora, you need a few extra libraries to build Clauditty. Here's a `dnf`
 command that should install all of them. If something is still found to be
 missing, please open an issue.
 
@@ -108,7 +108,7 @@ dnf install cmake freetype-devel fontconfig-devel libxcb-devel libxkbcommon-deve
 
 #### CentOS/RHEL 7
 
-On CentOS/RHEL 7, you need a few extra libraries to build Titty. Here's a `yum`
+On CentOS/RHEL 7, you need a few extra libraries to build Clauditty. Here's a `yum`
 command that should install all of them. If something is still found to be
 missing, please open an issue.
 
@@ -119,7 +119,7 @@ yum group install "Development Tools"
 
 #### RHEL 8
 
-On RHEL 8, like RHEL 7, you need a few extra libraries to build Titty. Here's a `dnf`
+On RHEL 8, like RHEL 7, you need a few extra libraries to build Clauditty. Here's a `dnf`
 command that should install all of them. If something is still found to be
 missing, please open an issue.
 
@@ -130,7 +130,7 @@ dnf group install "Development Tools"
 
 #### openSUSE
 
-On openSUSE, you need a few extra libraries to build Titty. Here's
+On openSUSE, you need a few extra libraries to build Clauditty. Here's
 a `zypper` command that should install all of them. If something is
 still found to be missing, please open an issue.
 
@@ -145,7 +145,7 @@ Compiles out of the box for 14.2
 #### Void Linux
 
 On [Void Linux](https://voidlinux.org), install following packages before
-compiling Titty:
+compiling Clauditty:
 
 ```sh
 xbps-install cmake freetype-devel expat-devel fontconfig-devel libxcb-devel pkg-config python3
@@ -153,7 +153,7 @@ xbps-install cmake freetype-devel expat-devel fontconfig-devel libxcb-devel pkg-
 
 #### FreeBSD
 
-On FreeBSD, you need a few extra libraries to build Titty. Here's a `pkg`
+On FreeBSD, you need a few extra libraries to build Clauditty. Here's a `pkg`
 command that should install all of them. If something is still found to be
 missing, please open an issue.
 
@@ -164,7 +164,7 @@ pkg install cmake freetype2 fontconfig pkgconf python3
 #### OpenBSD
 
 On OpenBSD 6.5, you need [Xenocara](https://xenocara.org) and Rust to build
-Titty, plus Python 3 to build its XCB dependency. If something is still
+Clauditty, plus Python 3 to build its XCB dependency. If something is still
 found to be missing, please open an issue.
 
 ```sh
@@ -173,13 +173,13 @@ pkg_add rust python
 
 Select the package for Python 3 (e.g. `python-3.6.8p0`) when prompted.
 
-The default user limits in OpenBSD are insufficient to build Titty. A
+The default user limits in OpenBSD are insufficient to build Clauditty. A
 `datasize-cur` of at least 3GB is recommended (see [login.conf](https://man.openbsd.org/login.conf)).
 
 #### Solus
 
 On [Solus](https://solus-project.com/), you need a few extra libraries to build
-Titty. Here's a `eopkg` command that should install all of them. If
+Clauditty. Here's a `eopkg` command that should install all of them. If
 something is still found to be missing, please open an issue.
 
 ```sh
@@ -197,7 +197,7 @@ nix-shell -A alacritty '<nixpkgs>'
 
 #### Gentoo
 
-On Gentoo, you need a few extra libraries to build Titty. The following
+On Gentoo, you need a few extra libraries to build Clauditty. The following
 command should install all of them. If something is still found to be missing,
 please open an issue.
 
@@ -216,7 +216,7 @@ guix environment alacritty
 
 #### Alpine Linux
 
-On Alpine Linux, you need a few extra libraries to build Titty. Here's an
+On Alpine Linux, you need a few extra libraries to build Clauditty. Here's an
 `apk` command that should install all of them. If something is still found to
 be missing, please open an issue.
 
@@ -231,7 +231,7 @@ installed as well as [Clang 3.9 or greater](http://releases.llvm.org/download.ht
 
 #### Other
 
-If you build Titty on another distribution, we would love some help
+If you build Clauditty on another distribution, we would love some help
 filling in this section of the README.
 
 ## Building
@@ -242,7 +242,7 @@ filling in this section of the README.
 cargo build --release
 ```
 
-On Linux/BSD, if it is desired to build Titty without support for either the
+On Linux/BSD, if it is desired to build Clauditty without support for either the
 X11 or Wayland rendering backend the following commands can be used.
 
 ```sh
@@ -253,13 +253,13 @@ cargo build --release --no-default-features --features=wayland
 cargo build --release --no-default-features --features=x11
 ```
 
-If all goes well, this should place a binary at `target/release/titty`.
+If all goes well, this should place a binary at `target/release/clauditty`.
 
 ### macOS
 
 ```sh
 make app
-cp -r target/release/osx/Titty.app /Applications/
+cp -r target/release/osx/Clauditty.app /Applications/
 ```
 
 #### Universal Binary
@@ -274,13 +274,13 @@ make app-universal
 
 ## Post Build
 
-There are some extra things you might want to set up after installing Titty.
-All the post build instruction assume you're still inside the Titty
+There are some extra things you might want to set up after installing Clauditty.
+All the post build instruction assume you're still inside the Clauditty
 repository.
 
 ### Terminfo
 
-To make sure Titty works correctly, either the `alacritty` or
+To make sure Clauditty works correctly, either the `alacritty` or
 `alacritty-direct` terminfo must be used. The `alacritty` terminfo will be
 picked up automatically if it is installed.
 
@@ -301,16 +301,16 @@ sudo tic -xe alacritty,alacritty-direct extra/alacritty.info
 ### Desktop Entry
 
 Many Linux and BSD distributions support desktop entries for adding applications
-to system menus. This will install the desktop entry for Titty:
+to system menus. This will install the desktop entry for Clauditty:
 
 ```sh
-sudo cp target/release/titty /usr/local/bin # or anywhere else in $PATH
-sudo cp extra/logo/alacritty-term.svg /usr/share/pixmaps/Titty.svg
-sudo desktop-file-install extra/linux/Titty.desktop
+sudo cp target/release/clauditty /usr/local/bin # or anywhere else in $PATH
+sudo cp extra/logo/clauditty-term.svg /usr/share/pixmaps/Clauditty.svg
+sudo desktop-file-install extra/linux/Clauditty.desktop
 sudo update-desktop-database
 ```
 
-If you are having problems with Titty's logo, you can replace it with
+If you are having problems with Clauditty's logo, you can replace it with
 prerendered PNGs and simplified SVGs available in the `extra/logo/compat`
 directory.
 
@@ -322,20 +322,20 @@ Installing the manual page requires the additional dependencies `gzip` and `scdo
 sudo mkdir -p /usr/local/share/man/man1
 sudo mkdir -p /usr/local/share/man/man5
 sudo mkdir -p /usr/local/share/man/man7
-scdoc < extra/man/titty.1.scd | gzip -c | sudo tee /usr/local/share/man/man1/titty.1.gz > /dev/null
-scdoc < extra/man/titty-msg.1.scd | gzip -c | sudo tee /usr/local/share/man/man1/titty-msg.1.gz > /dev/null
-scdoc < extra/man/titty.5.scd | gzip -c | sudo tee /usr/local/share/man/man5/titty.5.gz > /dev/null
-scdoc < extra/man/titty-bindings.5.scd | gzip -c | sudo tee /usr/local/share/man/man5/titty-bindings.5.gz > /dev/null
-scdoc < extra/man/titty-escapes.7.scd | gzip -c | sudo tee /usr/local/share/man/man7/titty-escapes.7.gz > /dev/null
+scdoc < extra/man/clauditty.1.scd | gzip -c | sudo tee /usr/local/share/man/man1/clauditty.1.gz > /dev/null
+scdoc < extra/man/clauditty-msg.1.scd | gzip -c | sudo tee /usr/local/share/man/man1/clauditty-msg.1.gz > /dev/null
+scdoc < extra/man/clauditty.5.scd | gzip -c | sudo tee /usr/local/share/man/man5/clauditty.5.gz > /dev/null
+scdoc < extra/man/clauditty-bindings.5.scd | gzip -c | sudo tee /usr/local/share/man/man5/clauditty-bindings.5.gz > /dev/null
+scdoc < extra/man/clauditty-escapes.7.scd | gzip -c | sudo tee /usr/local/share/man/man7/clauditty-escapes.7.gz > /dev/null
 ```
 
 ### Shell completions
 
-To get automatic completions for Titty's flags and arguments you can install the provided shell completions.
+To get automatic completions for Clauditty's flags and arguments you can install the provided shell completions.
 
 #### Zsh
 
-To install the completions for zsh, you can place the `extra/completions/_titty` file in any
+To install the completions for zsh, you can place the `extra/completions/_clauditty` file in any
 directory referenced by `$fpath`.
 
 If you do not already have such a directory registered through your `~/.zshrc`, you can add one like this:
@@ -348,26 +348,26 @@ echo 'fpath+=${ZDOTDIR:-~}/.zsh_functions' >> ${ZDOTDIR:-~}/.zshrc
 Then copy the completion file to this directory:
 
 ```sh
-cp extra/completions/_titty ${ZDOTDIR:-~}/.zsh_functions/_titty
+cp extra/completions/_clauditty ${ZDOTDIR:-~}/.zsh_functions/_clauditty
 ```
 
 #### Bash
 
-To install the completions for bash, you can `source` the `extra/completions/titty.bash` file
+To install the completions for bash, you can `source` the `extra/completions/clauditty.bash` file
 in your `~/.bashrc` file.
 
-If you do not plan to delete the source folder of titty, you can run
+If you do not plan to delete the source folder of clauditty, you can run
 
 ```sh
-echo "source $(pwd)/extra/completions/titty.bash" >> ~/.bashrc
+echo "source $(pwd)/extra/completions/clauditty.bash" >> ~/.bashrc
 ```
 
 Otherwise you can copy it to the `~/.bash_completion` folder and source it from there:
 
 ```sh
 mkdir -p ~/.bash_completion
-cp extra/completions/titty.bash ~/.bash_completion/titty
-echo "source ~/.bash_completion/titty" >> ~/.bashrc
+cp extra/completions/clauditty.bash ~/.bash_completion/clauditty
+echo "source ~/.bash_completion/clauditty" >> ~/.bashrc
 ```
 
 #### Fish
@@ -376,5 +376,5 @@ To install the completions for fish, from inside the fish shell, run
 
 ```
 mkdir -p $fish_complete_path[1]
-cp extra/completions/titty.fish $fish_complete_path[1]/titty.fish
+cp extra/completions/clauditty.fish $fish_complete_path[1]/clauditty.fish
 ```

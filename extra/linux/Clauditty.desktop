@@ -1,0 +1,18 @@
+[Desktop Entry]
+Type=Application
+TryExec=clauditty
+Exec=clauditty
+Icon=Clauditty
+Terminal=false
+Categories=System;TerminalEmulator;
+
+Name=Clauditty
+GenericName=Terminal
+Comment=A fast, cross-platform, OpenGL terminal emulator
+StartupNotify=true
+StartupWMClass=Clauditty
+Actions=New;
+
+[Desktop Action New]
+Name=New Terminal
+Exec=clauditty

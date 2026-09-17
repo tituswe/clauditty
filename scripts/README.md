@@ -3,8 +3,8 @@ Scripts
 
 ## Flamegraph
 
-Run the release version of Titty while recording call stacks. After the
-Titty process exits, a flamegraph will be generated and it's URI printed
+Run the release version of Clauditty while recording call stacks. After the
+Clauditty process exits, a flamegraph will be generated and it's URI printed
 as the only output to STDOUT.
 
 ```sh

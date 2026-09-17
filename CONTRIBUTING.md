@@ -1,6 +1,6 @@
-# Contributing to Titty
+# Contributing to Clauditty
 
-Thank you for your interest in contributing to Titty!
+Thank you for your interest in contributing to Clauditty!
 
 Table of Contents:
 
@@ -17,42 +17,42 @@ Table of Contents:
 ## Feature Requests
 
 Feature requests should be reported in the
-[Titty issue tracker](https://github.com/tituswe/titty/issues). To reduce the number of
+[Clauditty issue tracker](https://github.com/tituswe/clauditty/issues). To reduce the number of
 duplicates, please make sure to check the existing
-[enhancement](https://github.com/tituswe/titty/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3Aenhancement)
+[enhancement](https://github.com/tituswe/clauditty/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3Aenhancement)
 and
-[missing feature](https://github.com/tituswe/titty/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3A%22B+-+missing+feature%22)
+[missing feature](https://github.com/tituswe/clauditty/issues?utf8=%E2%9C%93&q=is%3Aissue+label%3A%22B+-+missing+feature%22)
 issues.
 
 ## Bug Reports
 
 Bug reports should be reported in the
-[Titty issue tracker](https://github.com/tituswe/titty/issues).
+[Clauditty issue tracker](https://github.com/tituswe/clauditty/issues).
 
-If a bug was not present in a previous version of Titty, providing the exact commit which
+If a bug was not present in a previous version of Clauditty, providing the exact commit which
 introduced the regression helps out a lot.
 
 ## Patches / Pull Requests
 
-All patches have to be sent on GitHub as [pull requests](https://github.com/tituswe/titty/pulls).
+All patches have to be sent on GitHub as [pull requests](https://github.com/tituswe/clauditty/pulls).
 
-If you are looking for a place to start contributing to Titty, take a look at the
-[help wanted](https://github.com/tituswe/titty/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22)
+If you are looking for a place to start contributing to Clauditty, take a look at the
+[help wanted](https://github.com/tituswe/clauditty/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22)
 and
-[easy](https://github.com/tituswe/titty/issues?q=is%3Aopen+is%3Aissue+label%3A%22D+-+easy%22)
+[easy](https://github.com/tituswe/clauditty/issues?q=is%3Aopen+is%3Aissue+label%3A%22D+-+easy%22)
 issues.
 
-You can find the minimum supported Rust version in Titty's manifest file
-(`cat alacritty/Cargo.toml | grep "rust-version"`). Titty **must** always
+You can find the minimum supported Rust version in Clauditty's manifest file
+(`cat clauditty/Cargo.toml | grep "rust-version"`). Clauditty **must** always
 build with the MSRV and bumping it should be avoided if possible.
 
-Since `alacritty_terminal`'s version always tracks the next release, make sure that the version is
+Since `clauditty_terminal`'s version always tracks the next release, make sure that the version is
 bumped according to semver when necessary.
 
 ### Testing
 
 To make sure no regressions were introduced, all tests should be run before sending a pull request.
-The following command can be run to test Titty:
+The following command can be run to test Clauditty:
 
 ```
 cargo test
@@ -60,10 +60,10 @@ cargo test
 
 Additionally if there's any functionality included which would lend itself to additional testing,
 new tests should be added. These can either be in the form of Rust tests using the `#[test]`
-annotation, or Titty's ref tests.
+annotation, or Clauditty's ref tests.
 
 To record a new ref test, a release version of the patched binary should be created and run with the
-`--ref-test` flag. After closing the Titty window, or killing it (`exit` and `^D` do not work),
+`--ref-test` flag. After closing the Clauditty window, or killing it (`exit` and `^D` do not work),
 some new files should have been generated in the working directory. Those can then be copied to the
 `./tests/ref/NEW_TEST_NAME` directory and the test can be enabled by editing the `ref_tests!` macro
 in the `./tests/ref.rs` file. When fixing a bug, it should be checked that the ref test does not
@@ -71,15 +71,15 @@ complete correctly with the unpatched version, to make sure the test case is cov
 
 ### Performance
 
-If changes could affect throughput or latency of Titty, these aspects should be benchmarked to
+If changes could affect throughput or latency of Clauditty, these aspects should be benchmarked to
 prevent potential regressions. Since there are often big performance differences between Rust's
 nightly releases, it's advised to perform these tests on the latest Rust stable release.
 
-Alacritty uses the [vtebench](https://github.com/alacritty/vtebench) tool for testing Titty's
+Alacritty uses the [vtebench](https://github.com/alacritty/vtebench) tool for testing Clauditty's
 performance. Instructions on how to use it can be found in its
 [README](https://github.com/alacritty/vtebench/blob/master/README.md).
 
-Latency is another important factor for Titty. On X11, Windows, and macOS the
+Latency is another important factor for Clauditty. On X11, Windows, and macOS the
 [typometer](https://github.com/pavelfatin/typometer) tool allows measuring keyboard latency.
 
 ### Documentation
@@ -89,21 +89,21 @@ the general `rustfmt` rules can be followed for formatting.
 
 If any change has been made to the `config.rs` file, it should also be documented in the man pages.
 
-Changes compared to the latest Titty release which have a direct effect on the user (opposed to
+Changes compared to the latest Clauditty release which have a direct effect on the user (opposed to
 things like code refactorings or documentation/tests) additionally need to be documented in the
-`CHANGELOG.md`. When a notable change is made to `alacritty_terminal`, it should be documented in
-`alacritty_terminal/CHANGELOG.md` as well. The existing entries should be used as a style guideline.
+`CHANGELOG.md`. When a notable change is made to `clauditty_terminal`, it should be documented in
+`clauditty_terminal/CHANGELOG.md` as well. The existing entries should be used as a style guideline.
 The change log should be used to document changes from a user-perspective, instead of explaining the
-technical background (like commit messages) More information about Titty's change log format can
+technical background (like commit messages) More information about Clauditty's change log format can
 be found [here](https://keepachangelog.com).
 
 ### Style
 
-All Titty changes are automatically verified by CI to conform to its rustfmt guidelines. If a CI
+All Clauditty changes are automatically verified by CI to conform to its rustfmt guidelines. If a CI
 build is failing because of formatting issues, you can install rustfmt using `rustup component add
 rustfmt` and then format all code using `cargo fmt`.
 
-Unless otherwise specified, Titty follows the Rust compiler's style guidelines:
+Unless otherwise specified, Clauditty follows the Rust compiler's style guidelines:
 
 https://rust-lang.github.io/api-guidelines
 
@@ -112,7 +112,7 @@ documentation comments.
 
 # Release Process
 
-Titty's release process aims to provide stable and well tested releases without having to hold
+Clauditty's release process aims to provide stable and well tested releases without having to hold
 back new features during the testing period.
 
 To achieve these goals, a new branch is created for every major release. Both the release candidates
@@ -151,9 +151,9 @@ The exact steps for an exemplary `0.2.3` release might look like this:
  5. Follow Steps 4-13 of the regular release's example
  6. The release's changelog is ported back to master, removing fixes from the `0.2.3` release
 
-The `alacritty_terminal` crate is released in synchronization with `alacritty`, keeping the `-dev`
-and `-rcX` version suffix identical across the two crates. As soon as the new Titty stable
-release is made, releases are tagged as `alacritty_terminal_vX.Y.Z` and pushed to crates.io. During
+The `clauditty_terminal` crate is released in synchronization with `clauditty`, keeping the `-dev`
+and `-rcX` version suffix identical across the two crates. As soon as the new Clauditty stable
+release is made, releases are tagged as `clauditty_terminal_vX.Y.Z` and pushed to crates.io. During
 a release, only the patch version is bumped on master, since there haven't been any changes since
 the last release yet.
 
@@ -161,10 +161,10 @@ the last release yet.
 
 Contributions **must not** include content generated by large language models or other probabilistic
 tools, including but not limited to Copilot or ChatGPT. This policy covers code, documentation, pull
-requests, issues, comments, and any other contributions to the Titty project.
+requests, issues, comments, and any other contributions to the Clauditty project.
 
 # Contact
 
-If there are any outstanding questions about contributing to Titty, they can be asked on the
-[Titty issue tracker](https://github.com/tituswe/titty/issues).
+If there are any outstanding questions about contributing to Clauditty, they can be asked on the
+[Clauditty issue tracker](https://github.com/tituswe/clauditty/issues).
 

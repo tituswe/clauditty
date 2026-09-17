@@ -11,7 +11,7 @@ packages:
   - scdoc
 
 sources:
-  - https://github.com/tituswe/titty
+  - https://github.com/tituswe/clauditty
 
 environment:
   PATH: /home/build/.cargo/bin:/usr/bin/
@@ -20,31 +20,31 @@ tasks:
   - rustup: |
       curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable --profile minimal
   - rustfmt: |
-      cd titty
+      cd clauditty
       rustup toolchain install nightly -c rustfmt
       cargo +nightly fmt -- --check
   - man-pages: |
-      cd titty
-      cat extra/man/titty.1.scd | scdoc > /dev/null
-      cat extra/man/titty-msg.1.scd | scdoc > /dev/null
-      cat extra/man/titty.5.scd | scdoc > /dev/null
-      cat extra/man/titty-bindings.5.scd | scdoc > /dev/null
+      cd clauditty
+      cat extra/man/clauditty.1.scd | scdoc > /dev/null
+      cat extra/man/clauditty-msg.1.scd | scdoc > /dev/null
+      cat extra/man/clauditty.5.scd | scdoc > /dev/null
+      cat extra/man/clauditty-bindings.5.scd | scdoc > /dev/null
   - test: |
-      cd titty
+      cd clauditty
       cargo test
   - oldstable: |
-      cd titty
+      cd clauditty
       oldstable=$(cat Cargo.toml | grep "rust-version" | sed 's/.*"\(.*\)".*/\1/')
       rustup toolchain install --profile minimal $oldstable
       rustup default $oldstable
       cargo test
   - clippy: |
-      cd titty
+      cd clauditty
       rustup component add clippy
       cargo clippy --all-targets
   - feature-wayland: |
-      cd titty/alacritty
+      cd clauditty/clauditty
       RUSTFLAGS="-D warnings" cargo test --no-default-features --features=wayland
   - feature-x11: |
-      cd titty/alacritty
+      cd clauditty/clauditty
       RUSTFLAGS="-D warnings" cargo test --no-default-features --features=x11

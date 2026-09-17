@@ -1,8 +1,8 @@
-<h1 align="center">Titty - A fast, cross-platform, OpenGL terminal emulator</h1>
+<h1 align="center">Clauditty - A fast, cross-platform, OpenGL terminal emulator</h1>
 
 ## About
 
-Titty is a fast, lightweight terminal emulator. It is a fork of
+Clauditty is a fast, lightweight terminal emulator. It is a fork of
 [Alacritty](https://github.com/alacritty/alacritty).
 
 It comes with sensible defaults and a flexible [config](#configuration). See the
@@ -23,7 +23,7 @@ brew install watchexec
 watchexec -r -e rs,toml,glsl -- cargo run
 ```
 
-To build a macOS app (`target/release/osx/Titty.app`):
+To build a macOS app (`target/release/osx/Clauditty.app`):
 
 ```sh
 make app
@@ -38,26 +38,26 @@ More build details are in [INSTALL.md](INSTALL.md).
 
 ## Configuration
 
-See `man 5 titty` for all config options.
+See `man 5 clauditty` for all config options.
 
-Titty doesn't create the config file for you, but it looks for one in the
+Clauditty doesn't create the config file for you, but it looks for one in the
 following locations:
 
-1. `$XDG_CONFIG_HOME/titty/titty.toml`
-2. `$XDG_CONFIG_HOME/titty.toml`
-3. `$HOME/.config/titty/titty.toml`
-4. `$HOME/.titty.toml`
-5. `/etc/titty/titty.toml`
+1. `$XDG_CONFIG_HOME/clauditty/clauditty.toml`
+2. `$XDG_CONFIG_HOME/clauditty.toml`
+3. `$HOME/.config/clauditty/clauditty.toml`
+4. `$HOME/.clauditty.toml`
+5. `/etc/clauditty/clauditty.toml`
 
 On Windows, the config file will be looked for in:
 
-* `%APPDATA%\titty\titty.toml`
+* `%APPDATA%\clauditty\clauditty.toml`
 
 Changes to the config file apply right away, with no restart.
 
 ## License
 
-Titty is released under the [Apache License, Version 2.0](LICENSE-APACHE).
+Clauditty is released under the [Apache License, Version 2.0](LICENSE-APACHE).
 
 Based on [Alacritty](https://github.com/alacritty/alacritty) by Christian Duerr,
 Joe Wilm and contributors.
