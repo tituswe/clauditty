@@ -408,8 +408,15 @@ impl WindowContext {
         let mut dividers = tab.layout.dividers(self.terminal_area(), gap);
         dividers.push(Rect::new(sidebar::sidebar_width(&window_size), 0., gap, window_size.height()));
 
+        // Outline the focused pane when the tab is split.
+        let focused_rect = self
+            .panes
+            .get(&tab.focused)
+            .filter(|_| matches!(tab.layout, Layout::Split { .. }))
+            .map(|pane| (pane.rect, pane_border_width(self.display.window.scale_factor as f32)));
+
         let sidebar_tabs = self.sidebar_tabs();
-        self.display.draw_sidebar(&sidebar_tabs, &dividers);
+        self.display.draw_sidebar(&sidebar_tabs, &dividers, focused_rect);
 
         self.display.end_frame(scheduler);
     }
@@ -1084,14 +1091,22 @@ fn pane_size_info(
     scale_factor: f32,
     rect: Rect,
 ) -> SizeInfo {
+    // Keep text clear of the focus border.
+    let inset = pane_border_width(scale_factor) + (3. * scale_factor).round();
+
     let padding = config.window.padding(scale_factor);
     SizeInfo::new(
         rect.width,
         rect.height,
         window_size.cell_width(),
         window_size.cell_height(),
-        padding.0,
-        padding.1,
+        padding.0 + inset,
+        padding.1 + inset,
         config.window.dynamic_padding,
     )
+}
+
+/// Width of the border around the focused pane.
+fn pane_border_width(scale_factor: f32) -> f32 {
+    (1.5 * scale_factor).round().max(1.)
 }

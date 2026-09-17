@@ -75,8 +75,15 @@ pub fn display_path(path: &Path, home: Option<&Path>) -> String {
 }
 
 impl Display {
-    /// Draw the sidebar and the dividers between panes.
-    pub fn draw_sidebar(&mut self, tabs: &[SidebarTab], dividers: &[Rect]) {
+    /// Draw the sidebar, the dividers between panes and the focused pane's border.
+    ///
+    /// The border is given as the pane's rectangle and the border width.
+    pub fn draw_sidebar(
+        &mut self,
+        tabs: &[SidebarTab],
+        dividers: &[Rect],
+        focused_pane: Option<(Rect, f32)>,
+    ) {
         let size_info = self.window_size_info;
         let metrics = self.glyph_cache.font_metrics();
 
@@ -123,6 +130,16 @@ impl Display {
             let Rect { x, y, width, height } = *divider;
             RenderRect::new(x, y, width, height, colors.divider, 1.)
         }));
+
+        if let Some((pane, border)) = focused_pane {
+            let Rect { x, y, width, height } = pane;
+            rects.extend([
+                RenderRect::new(x, y, width, border, ACCENT_COLOR, 1.),
+                RenderRect::new(x, y + height - border, width, border, ACCENT_COLOR, 1.),
+                RenderRect::new(x, y, border, height, ACCENT_COLOR, 1.),
+                RenderRect::new(x + width - border, y, border, height, ACCENT_COLOR, 1.),
+            ]);
+        }
 
         self.renderer.draw_rects(&size_info, &metrics, rects);
 
