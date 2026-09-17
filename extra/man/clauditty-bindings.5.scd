@@ -521,7 +521,31 @@ configuration. See *clauditty*(5) for full configuration format documentation.
 |  _"W"_
 :  _"Command"_
 :[
-:  _"Quit"_
+:  _"ClosePane"_
+|  _"D"_
+:  _"Command"_
+:[
+:  _"SplitRight"_
+|  _"D"_
+:  _"Command|Shift"_
+:[
+:  _"SplitDown"_
+|  _"Left"_
+:  _"Command"_
+:[
+:  _"FocusPaneLeft"_
+|  _"Right"_
+:  _"Command"_
+:[
+:  _"FocusPaneRight"_
+|  _"Up"_
+:  _"Command"_
+:[
+:  _"FocusPaneUp"_
+|  _"Down"_
+:  _"Command"_
+:[
+:  _"FocusPaneDown"_
 |  _"N"_
 :  _"Command"_
 :[

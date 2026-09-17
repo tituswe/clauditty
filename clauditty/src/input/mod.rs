@@ -36,8 +36,6 @@ use clauditty_terminal::vi_mode::ViMotion;
 use clauditty_terminal::vte::ansi::{ClearMode, Handler};
 
 use crate::clipboard::Clipboard;
-#[cfg(target_os = "macos")]
-use crate::config::window::Decorations;
 use crate::config::{
     Action, BindingMode, MouseAction, MouseEvent, SearchAction, UiConfig, ViAction,
 };
@@ -47,8 +45,10 @@ use crate::display::{Display, SizeInfo};
 use crate::event::{
     ClickState, Event, EventType, InlineSearchState, Mouse, TouchPurpose, TouchZoom,
 };
+use crate::layout::{FocusDirection, SplitDirection};
 use crate::message_bar::{self, Message};
 use crate::scheduler::{Scheduler, TimerId, Topic};
+use crate::window_context::TabSelection;
 
 pub mod keyboard;
 
@@ -99,6 +99,12 @@ pub trait ActionContext<T: EventListener> {
     fn terminal(&self) -> &Term<T>;
     fn terminal_mut(&mut self) -> &mut Term<T>;
     fn spawn_new_instance(&mut self) {}
+    fn create_tab(&mut self) {}
+    fn split_pane(&mut self, _direction: SplitDirection) {}
+    fn close_pane(&mut self) {}
+    fn focus_pane(&mut self, _direction: FocusDirection) {}
+    fn close_window(&mut self) {}
+    fn select_tab(&mut self, _selection: TabSelection) {}
     #[cfg(target_os = "macos")]
     fn create_new_window(&mut self, _tabbing_id: Option<String>) {}
     #[cfg(not(target_os = "macos"))]
@@ -345,7 +351,7 @@ impl<T: EventListener> Execute<T> for Action {
             Action::Minimize => ctx.window().set_minimized(true),
             Action::Quit => {
                 ctx.window().hold = false;
-                ctx.terminal_mut().exit();
+                ctx.close_window();
             },
             Action::IncreaseFontSize => ctx.change_font_size(FONT_SIZE_STEP),
             Action::DecreaseFontSize => ctx.change_font_size(-FONT_SIZE_STEP),
@@ -408,38 +414,26 @@ impl<T: EventListener> Execute<T> for Action {
             Action::SpawnNewInstance => ctx.spawn_new_instance(),
             #[cfg(target_os = "macos")]
             Action::CreateNewWindow => ctx.create_new_window(None),
-            #[cfg(target_os = "macos")]
-            Action::CreateNewTab => {
-                // Tabs on macOS are not possible without decorations.
-                if ctx.config().window.decorations != Decorations::None {
-                    let tabbing_id = Some(ctx.window().tabbing_id());
-                    ctx.create_new_window(tabbing_id);
-                }
-            },
-            #[cfg(target_os = "macos")]
-            Action::SelectNextTab => ctx.window().select_next_tab(),
-            #[cfg(target_os = "macos")]
-            Action::SelectPreviousTab => ctx.window().select_previous_tab(),
-            #[cfg(target_os = "macos")]
-            Action::SelectTab1 => ctx.window().select_tab_at_index(0),
-            #[cfg(target_os = "macos")]
-            Action::SelectTab2 => ctx.window().select_tab_at_index(1),
-            #[cfg(target_os = "macos")]
-            Action::SelectTab3 => ctx.window().select_tab_at_index(2),
-            #[cfg(target_os = "macos")]
-            Action::SelectTab4 => ctx.window().select_tab_at_index(3),
-            #[cfg(target_os = "macos")]
-            Action::SelectTab5 => ctx.window().select_tab_at_index(4),
-            #[cfg(target_os = "macos")]
-            Action::SelectTab6 => ctx.window().select_tab_at_index(5),
-            #[cfg(target_os = "macos")]
-            Action::SelectTab7 => ctx.window().select_tab_at_index(6),
-            #[cfg(target_os = "macos")]
-            Action::SelectTab8 => ctx.window().select_tab_at_index(7),
-            #[cfg(target_os = "macos")]
-            Action::SelectTab9 => ctx.window().select_tab_at_index(8),
-            #[cfg(target_os = "macos")]
-            Action::SelectLastTab => ctx.window().select_last_tab(),
+            Action::CreateNewTab => ctx.create_tab(),
+            Action::SplitRight => ctx.split_pane(SplitDirection::Right),
+            Action::SplitDown => ctx.split_pane(SplitDirection::Down),
+            Action::ClosePane => ctx.close_pane(),
+            Action::FocusPaneLeft => ctx.focus_pane(FocusDirection::Left),
+            Action::FocusPaneRight => ctx.focus_pane(FocusDirection::Right),
+            Action::FocusPaneUp => ctx.focus_pane(FocusDirection::Up),
+            Action::FocusPaneDown => ctx.focus_pane(FocusDirection::Down),
+            Action::SelectNextTab => ctx.select_tab(TabSelection::Next),
+            Action::SelectPreviousTab => ctx.select_tab(TabSelection::Previous),
+            Action::SelectTab1 => ctx.select_tab(TabSelection::Index(0)),
+            Action::SelectTab2 => ctx.select_tab(TabSelection::Index(1)),
+            Action::SelectTab3 => ctx.select_tab(TabSelection::Index(2)),
+            Action::SelectTab4 => ctx.select_tab(TabSelection::Index(3)),
+            Action::SelectTab5 => ctx.select_tab(TabSelection::Index(4)),
+            Action::SelectTab6 => ctx.select_tab(TabSelection::Index(5)),
+            Action::SelectTab7 => ctx.select_tab(TabSelection::Index(6)),
+            Action::SelectTab8 => ctx.select_tab(TabSelection::Index(7)),
+            Action::SelectTab9 => ctx.select_tab(TabSelection::Index(8)),
+            Action::SelectLastTab => ctx.select_tab(TabSelection::Last),
             _ => (),
         }
     }

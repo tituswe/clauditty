@@ -90,6 +90,9 @@ pub struct Renderer {
     text_renderer: TextRendererProvider,
     rect_renderer: RectRenderer,
     robustness: bool,
+
+    /// Bottom left corner of the drawing area, in window pixels from the bottom left.
+    origin: (i32, i32),
 }
 
 /// Wrapper around gl::GetString with error checking and reporting.
@@ -171,7 +174,7 @@ impl Renderer {
             }
         }
 
-        Ok(Self { text_renderer, rect_renderer, robustness })
+        Ok(Self { text_renderer, rect_renderer, robustness, origin: (0, 0) })
     }
 
     pub fn draw_cells<I: Iterator<Item = RenderableCell>>(
@@ -248,11 +251,12 @@ impl Renderer {
         // Prepare rect rendering state.
         unsafe {
             // Remove padding from viewport.
-            gl::Viewport(0, 0, size_info.width() as i32, size_info.height() as i32);
+            let (x, y) = self.origin;
+            gl::Viewport(x, y, size_info.width() as i32, size_info.height() as i32);
             gl::BlendFuncSeparate(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA, gl::SRC_ALPHA, gl::ONE);
         }
 
-        self.rect_renderer.draw(size_info, metrics, rects);
+        self.rect_renderer.draw(size_info, metrics, self.origin, rects);
 
         // Activate regular state again.
         unsafe {
@@ -329,14 +333,22 @@ impl Renderer {
     /// Set the viewport for cell rendering.
     #[inline]
     pub fn set_viewport(&self, size: &SizeInfo) {
+        let (x, y) = self.origin;
         unsafe {
             gl::Viewport(
-                size.padding_x() as i32,
-                size.padding_y() as i32,
+                x + size.padding_x() as i32,
+                y + size.padding_y() as i32,
                 size.width() as i32 - 2 * size.padding_x() as i32,
                 size.height() as i32 - 2 * size.padding_y() as i32,
             );
         }
+    }
+
+    /// Move the drawing area, so the next draws land in a pane instead of the whole window.
+    ///
+    /// The origin is the bottom left corner of the area, in window pixels from the bottom left.
+    pub fn set_origin(&mut self, x: i32, y: i32) {
+        self.origin = (x, y);
     }
 
     /// Resize the renderer.

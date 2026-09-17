@@ -63,6 +63,11 @@ impl DamageTracker {
     }
 
     /// Resize the damage information in the tracker.
+    /// Number of lines and columns currently tracked.
+    pub fn dimensions(&self) -> (usize, usize) {
+        (self.screen_lines, self.columns)
+    }
+
     pub fn resize(&mut self, screen_lines: usize, columns: usize) {
         self.screen_lines = screen_lines;
         self.columns = columns;

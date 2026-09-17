@@ -599,6 +599,21 @@ This section documents the *[cursor]* table of the configuration file.
 
 	Default: _0.15_
 
+# TABS
+
+This section documents the *[tabs]* table of the configuration file.
+
+*command* = _"<string>"_
+
+	Command run in the main pane of each new tab. It runs in an interactive
+	login shell, so it's found on your _$PATH_. When the command exits, the
+	pane keeps running your shell.
+
+	An empty command starts a plain shell. Panes opened with a split always
+	start a plain shell.
+
+	Default: _"claude"_
+
 # TERMINAL
 
 This section documents the *[terminal]* table of the configuration file.
@@ -834,7 +849,47 @@ _https://docs.rs/winit/latest/winit/keyboard/enum.Key.html#variant.Dead_
 		*Minimize*
 			Minimize the Clauditty window.
 		*Quit*
-			Quit Clauditty.
+			Close the Clauditty window.
+		*CreateNewTab*
+			Create a new tab in the sidebar.
+		*SplitRight*
+			Split the focused pane, opening a new pane to the right.
+		*SplitDown*
+			Split the focused pane, opening a new pane below.
+		*ClosePane*
+			Close the focused pane, closing the tab when it was the last pane.
+		*FocusPaneLeft*
+			Focus the pane to the left.
+		*FocusPaneRight*
+			Focus the pane to the right.
+		*FocusPaneUp*
+			Focus the pane above, or the previous tab from the top pane.
+		*FocusPaneDown*
+			Focus the pane below, or the next tab from the bottom pane.
+		*SelectNextTab*
+			Select next tab.
+		*SelectPreviousTab*
+			Select previous tab.
+		*SelectTab1*
+			Select the first tab.
+		*SelectTab2*
+			Select the second tab.
+		*SelectTab3*
+			Select the third tab.
+		*SelectTab4*
+			Select the fourth tab.
+		*SelectTab5*
+			Select the fifth tab.
+		*SelectTab6*
+			Select the sixth tab.
+		*SelectTab7*
+			Select the seventh tab.
+		*SelectTab8*
+			Select the eighth tab.
+		*SelectTab9*
+			Select the ninth tab.
+		*SelectLastTab*
+			Select the last tab.
 		*ClearLogNotice*
 			Clear warning and error notices.
 		*SpawnNewInstance*
@@ -961,32 +1016,6 @@ _https://docs.rs/winit/latest/winit/keyboard/enum.Key.html#variant.Dead_
 			Enter fullscreen without occupying another space.
 		*HideOtherApplications*
 			Hide all windows other than Clauditty.
-		*CreateNewTab*
-			Create new window in a tab.
-		*SelectNextTab*
-			Select next tab.
-		*SelectPreviousTab*
-			Select previous tab.
-		*SelectTab1*
-			Select the first tab.
-		*SelectTab2*
-			Select the second tab.
-		*SelectTab3*
-			Select the third tab.
-		*SelectTab4*
-			Select the fourth tab.
-		*SelectTab5*
-			Select the fifth tab.
-		*SelectTab6*
-			Select the sixth tab.
-		*SelectTab7*
-			Select the seventh tab.
-		*SelectTab8*
-			Select the eighth tab.
-		*SelectTab9*
-			Select the ninth tab.
-		*SelectLastTab*
-			Select the last tab.
 
 		_Linux/BSD exclusive:_
 

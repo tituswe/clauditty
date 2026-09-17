@@ -26,7 +26,7 @@ use winit::window::CursorIcon;
 use crossfont::{Rasterize, Rasterizer, Size as FontSize};
 use unicode_width::UnicodeWidthChar;
 
-use clauditty_terminal::event::{EventListener, OnResize, WindowSize};
+use clauditty_terminal::event::{EventListener, WindowSize};
 use clauditty_terminal::grid::Dimensions as TermDimensions;
 use clauditty_terminal::index::{Column, Direction, Line, Point};
 use clauditty_terminal::selection::Selection;
@@ -51,6 +51,7 @@ use crate::display::hint::{HintMatch, HintState};
 use crate::display::meter::Meter;
 use crate::display::window::Window;
 use crate::event::{Event, EventType, Mouse, SearchState};
+use crate::layout::Rect;
 use crate::message_bar::{MessageBuffer, MessageType};
 use crate::renderer::rects::{RenderLine, RenderLines, RenderRect};
 use crate::renderer::{self, GlyphCache, Renderer, platform};
@@ -61,6 +62,7 @@ pub mod color;
 pub mod content;
 pub mod cursor;
 pub mod hint;
+pub mod sidebar;
 pub mod window;
 
 mod bell;
@@ -342,7 +344,11 @@ impl DisplayUpdate {
 pub struct Display {
     pub window: Window,
 
+    /// Size of the pane receiving input, or the pane being drawn.
     pub size_info: SizeInfo,
+
+    /// Size of the whole window, without padding.
+    pub window_size_info: SizeInfo,
 
     /// Hint highlighted by the mouse.
     pub highlighted_hint: Option<HintMatch>,
@@ -458,6 +464,16 @@ impl Display {
             config.window.dynamic_padding && config.window.dimensions().is_none(),
         );
 
+        let window_size_info = SizeInfo::new(
+            viewport_size.width as f32,
+            viewport_size.height as f32,
+            cell_width,
+            cell_height,
+            0.,
+            0.,
+            false,
+        );
+
         info!("Cell size: {cell_width} x {cell_height}");
         info!("Padding: {} x {}", size_info.padding_x(), size_info.padding_y());
         info!("Width: {}, Height: {}", size_info.width(), size_info.height());
@@ -527,6 +543,7 @@ impl Display {
             glyph_cache,
             hint_state,
             size_info,
+            window_size_info,
             font_size,
             window,
             pending_renderer_update: Default::default(),
@@ -596,7 +613,8 @@ impl Display {
         self.renderer = ManuallyDrop::new(renderer);
 
         // Resize the renderer.
-        self.renderer.resize(&self.size_info);
+        self.renderer.set_origin(0, 0);
+        self.renderer.resize(&self.window_size_info);
 
         self.reset_glyph_cache();
         self.damage_tracker.frame().mark_fully_damaged();
@@ -612,7 +630,7 @@ impl Display {
                 if matches!(self.raw_window_handle, RawWindowHandle::Wayland(_))
                     && !self.damage_tracker.debug =>
             {
-                let damage = self.damage_tracker.shape_frame_damage(self.size_info.into());
+                let damage = self.damage_tracker.shape_frame_damage(self.window_size_info.into());
                 surface.swap_buffers_with_damage(context, &damage)
             },
             (surface, context) => surface.swap_buffers(context),
@@ -647,21 +665,14 @@ impl Display {
     // XXX: this function must not call to any `OpenGL` related tasks. Renderer updates are
     // performed in [`Self::process_renderer_update`] right before drawing.
     //
-    /// Process update events.
-    pub fn handle_update<T>(
-        &mut self,
-        terminal: &mut Term<T>,
-        pty_resize_handle: &mut dyn OnResize,
-        message_buffer: &MessageBuffer,
-        search_state: &mut SearchState,
-        config: &UiConfig,
-    ) where
-        T: EventListener,
-    {
+    /// Process update events for the whole window.
+    ///
+    /// Pane sizes are derived from the new window size by the window context afterwards.
+    pub fn handle_update(&mut self, config: &UiConfig) {
         let pending_update = mem::take(&mut self.pending_update);
 
         let (mut cell_width, mut cell_height) =
-            (self.size_info.cell_width(), self.size_info.cell_height());
+            (self.window_size_info.cell_width(), self.window_size_info.cell_height());
 
         if pending_update.font().is_some() || pending_update.cursor_dirty() {
             let renderer_update = self.pending_renderer_update.get_or_insert(Default::default());
@@ -681,59 +692,26 @@ impl Display {
             self.damage_tracker.frame().mark_fully_damaged();
         }
 
-        let (mut width, mut height) = (self.size_info.width(), self.size_info.height());
+        let (mut width, mut height) =
+            (self.window_size_info.width(), self.window_size_info.height());
         if let Some(dimensions) = pending_update.dimensions() {
             width = dimensions.width as f32;
             height = dimensions.height as f32;
         }
 
-        let padding = config.window.padding(self.window.scale_factor as f32);
-
-        let mut new_size = SizeInfo::new(
-            width,
-            height,
-            cell_width,
-            cell_height,
-            padding.0,
-            padding.1,
-            config.window.dynamic_padding,
-        );
-
-        // Update number of column/lines in the viewport.
-        let search_active = search_state.history_index.is_some();
-        let message_bar_lines = message_buffer.message().map_or(0, |m| m.text(&new_size).len());
-        let search_lines = usize::from(search_active);
-        new_size.reserve_lines(message_bar_lines + search_lines);
+        let new_size = SizeInfo::new(width, height, cell_width, cell_height, 0., 0., false);
 
         // Update resize increments.
         if config.window.resize_increments {
             self.window.set_resize_increments(PhysicalSize::new(cell_width, cell_height));
         }
 
-        // Resize when terminal when its dimensions have changed.
-        if self.size_info.screen_lines() != new_size.screen_lines
-            || self.size_info.columns() != new_size.columns()
-        {
-            // Resize PTY.
-            pty_resize_handle.on_resize(new_size.into());
-
-            // Resize terminal.
-            terminal.resize(new_size);
-
-            // Resize damage tracking.
-            self.damage_tracker.resize(new_size.screen_lines(), new_size.columns());
-        }
-
-        // Check if dimensions have changed.
-        if new_size != self.size_info {
-            // Queue renderer update.
+        // Queue renderer update when dimensions have changed.
+        if new_size != self.window_size_info {
             let renderer_update = self.pending_renderer_update.get_or_insert(Default::default());
             renderer_update.resize = true;
-
-            // Clear focused search match.
-            search_state.clear_focused_match();
         }
-        self.size_info = new_size;
+        self.window_size_info = new_size;
     }
 
     // NOTE: Renderer updates are split off, since platforms like Wayland require resize and other
@@ -749,8 +727,8 @@ impl Display {
 
         // Resize renderer.
         if renderer_update.resize {
-            let width = NonZeroU32::new(self.size_info.width() as u32).unwrap();
-            let height = NonZeroU32::new(self.size_info.height() as u32).unwrap();
+            let width = NonZeroU32::new(self.window_size_info.width() as u32).unwrap();
+            let height = NonZeroU32::new(self.window_size_info.height() as u32).unwrap();
             self.surface.resize(&self.context, width, height);
         }
 
@@ -761,27 +739,53 @@ impl Display {
             self.reset_glyph_cache();
         }
 
-        self.renderer.resize(&self.size_info);
+        self.renderer.set_origin(0, 0);
+        self.renderer.resize(&self.window_size_info);
 
-        info!("Padding: {} x {}", self.size_info.padding_x(), self.size_info.padding_y());
-        info!("Width: {}, Height: {}", self.size_info.width(), self.size_info.height());
+        info!("Width: {}, Height: {}", self.window_size_info.width(), self.window_size_info.height());
     }
 
-    /// Draw the screen.
+    /// Start a new frame by clearing the whole window.
+    pub fn begin_frame(&mut self, config: &UiConfig) {
+        // Make sure this window's OpenGL context is active.
+        self.make_current();
+
+        self.renderer.set_origin(0, 0);
+        self.renderer.resize(&self.window_size_info);
+
+        let background_color = self.colors[NamedColor::Background as usize];
+        self.renderer.clear(background_color, config.window_opacity());
+    }
+
+    /// Draw one pane's terminal into its rectangle.
     ///
-    /// A reference to Term whose state is being drawn must be provided.
-    ///
-    /// This call may block if vsync is enabled.
-    pub fn draw<T: EventListener>(
+    /// Only the focused pane shows hints, the IME preview, the visual bell and messages.
+    #[allow(clippy::too_many_arguments)]
+    pub fn draw_pane<T: EventListener>(
         &mut self,
         mut terminal: MutexGuard<'_, Term<T>>,
-        scheduler: &mut Scheduler,
+        pane_size: SizeInfo,
+        rect: Rect,
         message_buffer: &MessageBuffer,
         config: &UiConfig,
         search_state: &mut SearchState,
+        focused: bool,
     ) {
+        // Draw into the pane's rectangle.
+        let old_size_info = mem::replace(&mut self.size_info, pane_size);
+        let origin_y = self.window_size_info.height() - rect.y - rect.height;
+        self.renderer.set_origin(rect.x as i32, origin_y as i32);
+        self.renderer.resize(&pane_size);
+
+        // Panes share one damage tracker, so always redraw the whole pane.
+        let dimensions = (pane_size.screen_lines(), pane_size.columns());
+        if self.damage_tracker.dimensions() != dimensions {
+            self.damage_tracker.resize(dimensions.0, dimensions.1);
+        }
+        self.damage_tracker.frame().mark_fully_damaged();
+
         // Collect renderable content before the terminal is dropped.
-        let mut content = RenderableContent::new(config, self, &terminal, search_state);
+        let mut content = RenderableContent::new(config, self, &terminal, search_state, focused);
         let mut grid_cells = Vec::new();
         for cell in &mut content {
             grid_cells.push(cell);
@@ -815,7 +819,9 @@ impl Display {
         drop(terminal);
 
         // Invalidate highlighted hints if grid has changed.
-        self.validate_hint_highlights(display_offset);
+        if focused {
+            self.validate_hint_highlights(display_offset);
+        }
 
         // Add damage from clauditty's UI elements overlapping terminal.
 
@@ -832,15 +838,16 @@ impl Display {
         self.damage_tracker.damage_vi_cursor(vi_cursor_viewport_point);
         self.damage_tracker.damage_selection(selection_range, display_offset);
 
-        // Make sure this window's OpenGL context is active.
-        self.make_current();
+        // Fill the pane with its background, which applications can change.
+        let background_rect =
+            RenderRect::new(0., 0., size_info.width(), size_info.height(), background_color, 1.);
+        self.renderer.draw_rects(&size_info, &metrics, vec![background_rect]);
 
-        self.renderer.clear(background_color, config.window_opacity());
         let mut lines = RenderLines::new();
 
         // Optimize loop hint comparator.
         let has_highlighted_hint =
-            self.highlighted_hint.is_some() || self.vi_highlighted_hint.is_some();
+            focused && (self.highlighted_hint.is_some() || self.vi_highlighted_hint.is_some());
 
         // Draw grid.
         {
@@ -897,7 +904,7 @@ impl Display {
 
         // Push visual bell after url/underline/strikeout rects.
         let visual_bell_intensity = self.visual_bell.intensity();
-        if visual_bell_intensity != 0. {
+        if focused && visual_bell_intensity != 0. {
             let visual_bell_rect = RenderRect::new(
                 0.,
                 0.,
@@ -949,7 +956,7 @@ impl Display {
         };
 
         // Handle IME.
-        if self.ime.is_enabled() {
+        if focused && self.ime.is_enabled() {
             if let Some(point) = ime_position {
                 let (fg, bg) = if search_state.regex().is_some() {
                     (config.colors.footer_bar_foreground(), config.colors.footer_bar_background())
@@ -961,7 +968,7 @@ impl Display {
             }
         }
 
-        if let Some(message) = message_buffer.message() {
+        if let Some(message) = message_buffer.message().filter(|_| focused) {
             let search_offset = usize::from(search_state.regex().is_some());
             let text = message.text(&size_info);
 
@@ -1008,7 +1015,9 @@ impl Display {
             self.renderer.draw_rects(&size_info, &metrics, rects);
         }
 
-        self.draw_render_timer(config);
+        if focused {
+            self.draw_render_timer(config);
+        }
 
         // Draw hyperlink uri preview.
         if has_highlighted_hint {
@@ -1016,18 +1025,26 @@ impl Display {
             self.draw_hyperlink_preview(config, cursor_point, display_offset);
         }
 
-        // Notify winit that we're about to present.
-        self.window.pre_present_notify();
-
         // Highlight damage for debugging.
         if self.damage_tracker.debug {
-            let damage = self.damage_tracker.shape_frame_damage(self.size_info.into());
-            let mut rects = Vec::with_capacity(damage.len());
+            let mut rects = Vec::new();
             self.highlight_damage(&mut rects);
             self.renderer.draw_rects(&self.size_info, &metrics, rects);
         }
 
-        // Clearing debug highlights from the previous frame requires full redraw.
+        self.size_info = old_size_info;
+    }
+
+    /// Present the frame drawn since [`Self::begin_frame`].
+    ///
+    /// This call may block if vsync is enabled.
+    pub fn end_frame(&mut self, scheduler: &mut Scheduler) {
+        // Notify winit that we're about to present.
+        self.window.pre_present_notify();
+
+        // Panes are always fully redrawn.
+        self.damage_tracker.frame().mark_fully_damaged();
+
         self.swap_buffers();
 
         if matches!(self.raw_window_handle, RawWindowHandle::Xcb(_) | RawWindowHandle::Xlib(_)) {

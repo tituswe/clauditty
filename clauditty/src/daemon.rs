@@ -137,6 +137,40 @@ pub fn foreground_process_path(
     Ok(cwd)
 }
 
+/// Get the executable of the controlling process.
+#[cfg(not(any(windows, target_os = "openbsd")))]
+pub fn foreground_process_program(
+    master_fd: RawFd,
+    shell_pid: u32,
+) -> Result<PathBuf, Box<dyn Error>> {
+    let mut pid = unsafe { libc::tcgetpgrp(master_fd) };
+    if pid < 0 {
+        pid = shell_pid as pid_t;
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        let mut buf = vec![0u8; libc::PROC_PIDPATHINFO_MAXSIZE as usize];
+        let len = unsafe { libc::proc_pidpath(pid, buf.as_mut_ptr().cast(), buf.len() as u32) };
+        if len <= 0 {
+            return Err(io::Error::last_os_error().into());
+        }
+
+        buf.truncate(len as usize);
+        Ok(PathBuf::from(std::ffi::OsString::from_vec(buf)))
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        #[cfg(not(target_os = "freebsd"))]
+        let link_path = format!("/proc/{pid}/exe");
+        #[cfg(target_os = "freebsd")]
+        let link_path = format!("/compat/linux/proc/{}/exe", pid);
+
+        Ok(fs::read_link(link_path)?)
+    }
+}
+
 #[cfg(target_os = "openbsd")]
 pub fn foreground_process_path(
     master_fd: RawFd,

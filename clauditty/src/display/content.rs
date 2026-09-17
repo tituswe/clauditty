@@ -43,6 +43,7 @@ impl<'a> RenderableContent<'a> {
         display: &'a mut Display,
         term: &'a Term<T>,
         search_state: &'a mut SearchState,
+        focused: bool,
     ) -> Self {
         let search = search_state.dfas().map(|dfas| HintMatches::visible_regex_matches(term, dfas));
         let focused_match = search_state.focused_match();
@@ -50,9 +51,9 @@ impl<'a> RenderableContent<'a> {
 
         // Find terminal cursor shape.
         let cursor_shape = if terminal_content.cursor.shape == CursorShape::Hidden
-            || display.cursor_hidden
+            || (focused && display.cursor_hidden)
             || search_state.regex().is_some()
-            || display.ime.preedit().is_some()
+            || (focused && display.ime.preedit().is_some())
         {
             CursorShape::Hidden
         } else if !term.is_focused && config.cursor.unfocused_hollow {
@@ -66,7 +67,7 @@ impl<'a> RenderableContent<'a> {
         let display_offset = terminal_content.display_offset;
         let cursor_point = term::point_to_viewport(display_offset, cursor_point).unwrap();
 
-        let hint = if display.hint_state.active() {
+        let hint = if focused && display.hint_state.active() {
             display.hint_state.update_matches(term);
             Some(Hint::from(&display.hint_state))
         } else {

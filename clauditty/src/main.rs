@@ -34,11 +34,13 @@ mod daemon;
 mod display;
 mod event;
 mod input;
+mod layout;
 mod logging;
 #[cfg(target_os = "macos")]
 mod macos;
 mod message_bar;
 mod migrate;
+mod pane;
 #[cfg(windows)]
 mod panic;
 #[cfg(unix)]
@@ -134,6 +136,9 @@ impl Drop for TemporaryFiles {
 /// Creates a window, the terminal state, PTY, I/O event loop, input processor,
 /// config change monitor, and runs the main display loop.
 fn clauditty(mut options: Options) -> Result<(), Box<dyn Error>> {
+    // Drop session markers from a parent Claude Code, so agents in our panes start fresh.
+    remove_claude_code_env();
+
     // Setup winit event loop.
     let window_event_loop = EventLoop::<Event>::with_user_event().build()?;
 
@@ -251,4 +256,17 @@ fn log_config_path(config: &UiConfig) {
     }
 
     info!("{msg}");
+}
+
+/// Remove Claude Code session variables inherited from the process that launched us.
+fn remove_claude_code_env() {
+    let keys: Vec<_> = env::vars_os()
+        .filter_map(|(key, _)| key.into_string().ok())
+        .filter(|key| key.starts_with("CLAUDE_CODE_") || key == "CLAUDECODE")
+        .collect();
+
+    for key in keys {
+        // SAFETY: Called on startup, before any other threads are spawned.
+        unsafe { env::remove_var(key) };
+    }
 }

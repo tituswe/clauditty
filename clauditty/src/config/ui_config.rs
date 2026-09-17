@@ -32,6 +32,7 @@ use crate::config::general::General;
 use crate::config::mouse::Mouse;
 use crate::config::scrolling::Scrolling;
 use crate::config::selection::Selection;
+use crate::config::tabs::Tabs;
 use crate::config::terminal::Terminal;
 use crate::config::window::WindowConfig;
 
@@ -85,6 +86,9 @@ pub struct UiConfig {
 
     /// Config for the clauditty_terminal itself.
     pub terminal: Terminal,
+
+    /// Tab configuration.
+    pub tabs: Tabs,
 
     /// Keyboard configuration.
     keyboard: Keyboard,

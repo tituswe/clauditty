@@ -4,7 +4,6 @@ use crate::ConfigMonitor;
 use glutin::config::GetGlConfig;
 use std::borrow::Cow;
 use std::cmp::min;
-use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::error::Error;
 use std::ffi::OsStr;
@@ -58,12 +57,13 @@ use crate::display::hint::HintMatch;
 use crate::display::window::{ImeInhibitor, Window};
 use crate::display::{Display, Preedit, SizeInfo};
 use crate::input::{self, ActionContext as _, FONT_SIZE_STEP};
+use crate::layout::{FocusDirection, PaneId, SplitDirection};
 use crate::logging::{LOG_TARGET_CONFIG, LOG_TARGET_WINIT};
 use crate::message_bar::{Message, MessageBuffer};
 #[cfg(unix)]
 use crate::polling::ipc::{self, SocketReply};
 use crate::scheduler::{Scheduler, TimerId, Topic};
-use crate::window_context::WindowContext;
+use crate::window_context::{PaneCommand, TabSelection, WindowContext};
 
 /// Duration after the last user input until an unlimited search is performed.
 pub const TYPING_SEARCH_DELAY: Duration = Duration::from_millis(500);
@@ -205,6 +205,29 @@ impl Processor {
         }
     }
 
+    /// Drop windows whose last pane closed, exiting when no windows are left.
+    fn remove_closed_windows(&mut self, event_loop: &ActiveEventLoop) {
+        let closed: Vec<WindowId> =
+            self.windows.iter().filter(|(_, window)| window.should_close()).map(|(id, _)| *id).collect();
+
+        for window_id in closed {
+            let Some(window_context) = self.windows.remove(&window_id) else { continue };
+
+            // Unschedule pending events.
+            self.scheduler.unschedule_window(window_id);
+
+            // Shutdown if no more terminals are open.
+            if self.windows.is_empty() && !self.cli_options.daemon {
+                // Write ref tests of last window to disk.
+                if self.config.debug.ref_test {
+                    window_context.write_ref_test_results();
+                }
+
+                event_loop.exit();
+            }
+        }
+    }
+
     /// Check if an event is irrelevant and can be skipped.
     fn skip_window_event(event: &WindowEvent) -> bool {
         matches!(
@@ -248,7 +271,7 @@ impl ApplicationHandler<Event> for Processor {
 
     fn window_event(
         &mut self,
-        _event_loop: &ActiveEventLoop,
+        event_loop: &ActiveEventLoop,
         window_id: WindowId,
         event: WindowEvent,
     ) {
@@ -270,22 +293,26 @@ impl ApplicationHandler<Event> for Processor {
 
         window_context.handle_event(
             #[cfg(target_os = "macos")]
-            _event_loop,
+            event_loop,
             &self.proxy,
             &mut self.clipboard,
             &mut self.scheduler,
             WinitEvent::WindowEvent { window_id, event },
         );
 
-        if is_redraw {
+        if is_redraw && !window_context.should_close() {
             window_context.draw(&mut self.scheduler);
         }
+
+        self.remove_closed_windows(event_loop);
     }
 
     fn user_event(&mut self, event_loop: &ActiveEventLoop, event: Event) {
         if self.config.debug.print_events {
             info!(target: LOG_TARGET_WINIT, "{event:?}");
         }
+
+        let pane_id = event.pane_id;
 
         // Handle events which don't mandate the WindowId.
         match (event.payload, event.window_id.as_ref()) {
@@ -415,28 +442,11 @@ impl ApplicationHandler<Event> for Processor {
                 }
             },
             (EventType::Terminal(TerminalEvent::Exit), Some(window_id)) => {
-                // Remove the closed terminal.
-                let window_context = match self.windows.entry(*window_id) {
-                    // Don't exit when terminal exits if user asked to hold the window.
-                    Entry::Occupied(window_context)
-                        if !window_context.get().display.window.hold =>
-                    {
-                        window_context.remove()
-                    },
-                    _ => return,
-                };
-
-                // Unschedule pending events.
-                self.scheduler.unschedule_window(window_context.id());
-
-                // Shutdown if no more terminals are open.
-                if self.windows.is_empty() && !self.cli_options.daemon {
-                    // Write ref tests of last window to disk.
-                    if self.config.debug.ref_test {
-                        window_context.write_ref_test_results();
-                    }
-
-                    event_loop.exit();
+                // Remove the pane whose shell exited.
+                if let (Some(window_context), Some(pane_id)) =
+                    (self.windows.get_mut(window_id), pane_id)
+                {
+                    window_context.on_pane_exit(pane_id);
                 }
             },
             // NOTE: This event bypasses batching to minimize input latency.
@@ -456,11 +466,17 @@ impl ApplicationHandler<Event> for Processor {
                         &self.proxy,
                         &mut self.clipboard,
                         &mut self.scheduler,
-                        WinitEvent::UserEvent(Event::new(payload, *window_id)),
+                        WinitEvent::UserEvent(Event {
+                            window_id: Some(*window_id),
+                            pane_id,
+                            payload,
+                        }),
                     );
                 }
             },
         };
+
+        self.remove_closed_windows(event_loop);
     }
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
@@ -479,6 +495,8 @@ impl ApplicationHandler<Event> for Processor {
                 WinitEvent::AboutToWait,
             );
         }
+
+        self.remove_closed_windows(event_loop);
 
         // Update the scheduler after event processing to ensure
         // the event loop deadline is as accurate as possible.
@@ -522,13 +540,26 @@ pub struct Event {
     /// Limit event to a specific window.
     window_id: Option<WindowId>,
 
+    /// Limit event to a specific pane inside the window.
+    pane_id: Option<PaneId>,
+
     /// Event payload.
     payload: EventType,
 }
 
 impl Event {
     pub fn new<I: Into<Option<WindowId>>>(payload: EventType, window_id: I) -> Self {
-        Self { window_id: window_id.into(), payload }
+        Self { window_id: window_id.into(), pane_id: None, payload }
+    }
+
+    /// Pane this event is meant for, if any.
+    pub fn pane_id(&self) -> Option<PaneId> {
+        self.pane_id
+    }
+
+    /// Event payload.
+    pub fn payload(&self) -> &EventType {
+        &self.payload
     }
 }
 
@@ -681,6 +712,7 @@ pub struct ActionContext<'a, N, T> {
     pub dirty: &'a mut bool,
     pub occluded: &'a mut bool,
     pub preserve_title: bool,
+    pub pane_commands: &'a mut Vec<PaneCommand>,
     #[cfg(not(windows))]
     pub master_fd: RawFd,
     #[cfg(not(windows))]
@@ -879,6 +911,30 @@ impl<'a, N: Notify + 'a, T: EventListener> input::ActionContext<T> for ActionCon
         }
 
         self.spawn_daemon(&clauditty, &args);
+    }
+
+    fn create_tab(&mut self) {
+        self.pane_commands.push(PaneCommand::NewTab);
+    }
+
+    fn split_pane(&mut self, direction: SplitDirection) {
+        self.pane_commands.push(PaneCommand::Split(direction));
+    }
+
+    fn close_pane(&mut self) {
+        self.pane_commands.push(PaneCommand::ClosePane);
+    }
+
+    fn focus_pane(&mut self, direction: FocusDirection) {
+        self.pane_commands.push(PaneCommand::Focus(direction));
+    }
+
+    fn close_window(&mut self) {
+        self.pane_commands.push(PaneCommand::CloseWindow);
+    }
+
+    fn select_tab(&mut self, selection: TabSelection) {
+        self.pane_commands.push(PaneCommand::SelectTab(selection));
     }
 
     #[cfg(not(windows))]
@@ -1940,7 +1996,7 @@ impl input::Processor<EventProxy, ActionContext<'_, Notifier, EventProxy>> {
                     WindowEvent::CloseRequested => {
                         // User asked to close the window, so no need to hold it.
                         self.ctx.window().hold = false;
-                        self.ctx.terminal.exit();
+                        self.ctx.close_window();
                     },
                     WindowEvent::ScaleFactorChanged { scale_factor, .. } => {
                         let old_scale_factor =
@@ -2073,21 +2129,32 @@ impl input::Processor<EventProxy, ActionContext<'_, Notifier, EventProxy>> {
 pub struct EventProxy {
     proxy: EventLoopProxy<Event>,
     window_id: WindowId,
+    pane_id: Option<PaneId>,
 }
 
 impl EventProxy {
     pub fn new(proxy: EventLoopProxy<Event>, window_id: WindowId) -> Self {
-        Self { proxy, window_id }
+        Self { proxy, window_id, pane_id: None }
+    }
+
+    /// Send all events from this proxy to a single pane.
+    pub fn with_pane(mut self, pane_id: PaneId) -> Self {
+        self.pane_id = Some(pane_id);
+        self
+    }
+
+    fn event(&self, payload: EventType) -> Event {
+        Event { window_id: Some(self.window_id), pane_id: self.pane_id, payload }
     }
 
     /// Send an event to the event loop.
     pub fn send_event(&self, event: EventType) {
-        let _ = self.proxy.send_event(Event::new(event, self.window_id));
+        let _ = self.proxy.send_event(self.event(event));
     }
 }
 
 impl EventListener for EventProxy {
     fn send_event(&self, event: TerminalEvent) {
-        let _ = self.proxy.send_event(Event::new(event.into(), self.window_id));
+        let _ = self.proxy.send_event(self.event(event.into()));
     }
 }

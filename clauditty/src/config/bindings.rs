@@ -220,8 +220,29 @@ pub enum Action {
     /// Create a new Clauditty window.
     CreateNewWindow,
 
-    /// Create new window in a tab.
+    /// Create a new tab in the sidebar.
     CreateNewTab,
+
+    /// Split the focused pane, opening a new pane to the right.
+    SplitRight,
+
+    /// Split the focused pane, opening a new pane below.
+    SplitDown,
+
+    /// Close the focused pane, closing the tab when it was the last pane.
+    ClosePane,
+
+    /// Focus the pane to the left.
+    FocusPaneLeft,
+
+    /// Focus the pane to the right.
+    FocusPaneRight,
+
+    /// Focus the pane above, or the previous tab from the top pane.
+    FocusPaneUp,
+
+    /// Focus the pane below, or the next tab from the bottom pane.
+    FocusPaneDown,
 
     /// Toggle fullscreen.
     ToggleFullscreen,
@@ -581,8 +602,15 @@ pub fn platform_key_bindings() -> Vec<KeyBinding> {
     bindings!(
         KeyBinding;
         Insert, ModifiersState::SHIFT, ~BindingMode::VI, ~BindingMode::SEARCH; Action::Esc("\x1b[2;2~".into());
-        // Tabbing api.
+        // Tabs and panes.
         "t",    ModifiersState::SUPER;                                         Action::CreateNewTab;
+        "d",    ModifiersState::SUPER;                                         Action::SplitRight;
+        "d",    ModifiersState::SUPER | ModifiersState::SHIFT;                 Action::SplitDown;
+        "w",    ModifiersState::SUPER;                                         Action::ClosePane;
+        ArrowLeft,  ModifiersState::SUPER;                                     Action::FocusPaneLeft;
+        ArrowRight, ModifiersState::SUPER;                                     Action::FocusPaneRight;
+        ArrowUp,    ModifiersState::SUPER;                                     Action::FocusPaneUp;
+        ArrowDown,  ModifiersState::SUPER;                                     Action::FocusPaneDown;
         "]",    ModifiersState::SUPER | ModifiersState::SHIFT;                 Action::SelectNextTab;
         "[",    ModifiersState::SUPER | ModifiersState::SHIFT;                 Action::SelectPreviousTab;
         Tab,    ModifiersState::SUPER;                                         Action::SelectNextTab;
@@ -612,7 +640,6 @@ pub fn platform_key_bindings() -> Vec<KeyBinding> {
         "h",    ModifiersState::SUPER   | ModifiersState::ALT;                 Action::HideOtherApplications;
         "m",    ModifiersState::SUPER;                                         Action::Minimize;
         "q",    ModifiersState::SUPER;                                         Action::Quit;
-        "w",    ModifiersState::SUPER;                                         Action::Quit;
         "f",    ModifiersState::SUPER, ~BindingMode::SEARCH;                   Action::SearchForward;
         "b",    ModifiersState::SUPER, ~BindingMode::SEARCH;                   Action::SearchBackward;
         "+" => KeyLocation::Numpad, ModifiersState::SUPER;                     Action::IncreaseFontSize;

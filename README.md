@@ -1,12 +1,39 @@
-<h1 align="center">Clauditty - A fast, cross-platform, OpenGL terminal emulator</h1>
+<h1 align="center">Clauditty - An AI-native terminal</h1>
 
 ## About
 
-Clauditty is a fast, lightweight terminal emulator. It is a fork of
+Clauditty is a fast, lightweight terminal built for coding agents like
+[Claude Code](https://claude.com/claude-code). It is a fork of
 [Alacritty](https://github.com/alacritty/alacritty).
 
 It comes with sensible defaults and a flexible [config](#configuration). See the
 [features](./docs/features.md) overview for what it can do.
+
+## Tabs and panes
+
+Tabs live in a sidebar on the left. Each new tab runs Claude Code in its main
+pane. Split panes run your shell.
+
+Each tab card shows the app in the focused pane, a preview of its last lines
+and its working directory.
+
+| Shortcut            | Action                             |
+| ------------------- | ---------------------------------- |
+| `Cmd+T`             | New tab                            |
+| `Cmd+D`             | Split pane to the right            |
+| `Cmd+Shift+D`       | Split pane down                    |
+| `Cmd+W`             | Close pane, or tab if last pane    |
+| `Cmd+Arrow`         | Move to the pane in that direction |
+| `Cmd+1` to `Cmd+9`  | Switch tab                         |
+| `Cmd+Shift+[` / `]` | Previous / next tab                |
+
+`Cmd+Up` on the top pane goes to the previous tab, and `Cmd+Down` on the bottom
+pane goes to the next tab.
+
+Click a tab to switch to it, or a pane to focus it.
+
+Change the tab command with `tabs.command` in the config. An empty command
+starts a plain shell.
 
 ## Build and run
 
