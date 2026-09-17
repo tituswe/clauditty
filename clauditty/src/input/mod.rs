@@ -100,9 +100,11 @@ pub trait ActionContext<T: EventListener> {
     fn terminal_mut(&mut self) -> &mut Term<T>;
     fn spawn_new_instance(&mut self) {}
     fn create_tab(&mut self) {}
+    fn create_agent_tab(&mut self) {}
     fn split_pane(&mut self, _direction: SplitDirection) {}
     fn close_pane(&mut self) {}
     fn focus_pane(&mut self, _direction: FocusDirection) {}
+    fn dismiss_tab(&mut self) {}
     fn close_window(&mut self) {}
     fn select_tab(&mut self, _selection: TabSelection) {}
     #[cfg(target_os = "macos")]
@@ -415,9 +417,11 @@ impl<T: EventListener> Execute<T> for Action {
             #[cfg(target_os = "macos")]
             Action::CreateNewWindow => ctx.create_new_window(None),
             Action::CreateNewTab => ctx.create_tab(),
+            Action::CreateAgentTab => ctx.create_agent_tab(),
             Action::SplitRight => ctx.split_pane(SplitDirection::Right),
             Action::SplitDown => ctx.split_pane(SplitDirection::Down),
             Action::ClosePane => ctx.close_pane(),
+            Action::DismissTab => ctx.dismiss_tab(),
             Action::FocusPaneLeft => ctx.focus_pane(FocusDirection::Left),
             Action::FocusPaneRight => ctx.focus_pane(FocusDirection::Right),
             Action::FocusPaneUp => ctx.focus_pane(FocusDirection::Up),

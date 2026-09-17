@@ -220,8 +220,11 @@ pub enum Action {
     /// Create a new Clauditty window.
     CreateNewWindow,
 
-    /// Create a new tab in the sidebar.
+    /// Create a new tab running a plain shell.
     CreateNewTab,
+
+    /// Create a new tab running `tabs.command`, Claude Code by default.
+    CreateAgentTab,
 
     /// Split the focused pane, opening a new pane to the right.
     SplitRight,
@@ -231,6 +234,9 @@ pub enum Action {
 
     /// Close the focused pane, closing the tab when it was the last pane.
     ClosePane,
+
+    /// Mark the active tab as read and go to the first other tab in the sidebar.
+    DismissTab,
 
     /// Focus the pane to the left.
     FocusPaneLeft,
@@ -604,9 +610,11 @@ pub fn platform_key_bindings() -> Vec<KeyBinding> {
         Insert, ModifiersState::SHIFT, ~BindingMode::VI, ~BindingMode::SEARCH; Action::Esc("\x1b[2;2~".into());
         // Tabs and panes.
         "t",    ModifiersState::SUPER;                                         Action::CreateNewTab;
+        "t",    ModifiersState::SUPER | ModifiersState::SHIFT;                 Action::CreateAgentTab;
         "d",    ModifiersState::SUPER;                                         Action::SplitRight;
         "d",    ModifiersState::SUPER | ModifiersState::SHIFT;                 Action::SplitDown;
         "w",    ModifiersState::SUPER;                                         Action::ClosePane;
+        Enter,      ModifiersState::SUPER;                                     Action::DismissTab;
         ArrowLeft,  ModifiersState::SUPER;                                     Action::FocusPaneLeft;
         ArrowRight, ModifiersState::SUPER;                                     Action::FocusPaneRight;
         ArrowUp,    ModifiersState::SUPER;                                     Action::FocusPaneUp;

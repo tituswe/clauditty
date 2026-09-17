@@ -65,6 +65,9 @@ use crate::polling::ipc::{self, SocketReply};
 use crate::scheduler::{Scheduler, TimerId, Topic};
 use crate::window_context::{PaneCommand, TabSelection, WindowContext};
 
+/// How often panes are checked for finished work.
+const ACTIVITY_UPDATE_INTERVAL: Duration = Duration::from_millis(500);
+
 /// Duration after the last user input until an unlimited search is performed.
 pub const TYPING_SEARCH_DELAY: Duration = Duration::from_millis(500);
 
@@ -161,6 +164,7 @@ impl Processor {
         )?;
 
         self.gl_config = Some(window_context.display.gl_context().config());
+        self.schedule_activity_updates(window_context.id());
         self.windows.insert(window_context.id(), window_context);
 
         Ok(())
@@ -190,8 +194,16 @@ impl Processor {
             config_overrides,
         )?;
 
+        self.schedule_activity_updates(window_context.id());
         self.windows.insert(window_context.id(), window_context);
         Ok(())
+    }
+
+    /// Regularly check a window's panes for finished work.
+    fn schedule_activity_updates(&mut self, window_id: WindowId) {
+        let event = Event::new(EventType::ActivityTick, window_id);
+        let timer_id = TimerId::new(Topic::Activity, window_id);
+        self.scheduler.schedule(event, ACTIVITY_UPDATE_INTERVAL, true, timer_id);
     }
 
     /// Run the event loop.
@@ -435,6 +447,10 @@ impl ApplicationHandler<Event> for Processor {
             },
             (EventType::Terminal(TerminalEvent::Wakeup), Some(window_id)) => {
                 if let Some(window_context) = self.windows.get_mut(window_id) {
+                    if let Some(pane_id) = pane_id {
+                        window_context.on_pane_output(pane_id);
+                    }
+
                     window_context.dirty = true;
                     if window_context.display.window.has_frame {
                         window_context.display.window.request_redraw();
@@ -447,6 +463,11 @@ impl ApplicationHandler<Event> for Processor {
                     (self.windows.get_mut(window_id), pane_id)
                 {
                     window_context.on_pane_exit(pane_id);
+                }
+            },
+            (EventType::ActivityTick, Some(window_id)) => {
+                if let Some(window_context) = self.windows.get_mut(window_id) {
+                    window_context.update_activity();
                 }
             },
             // NOTE: This event bypasses batching to minimize input latency.
@@ -587,6 +608,8 @@ pub enum EventType {
     #[cfg(unix)]
     Shutdown,
     Frame,
+    /// Check which panes started or finished working.
+    ActivityTick,
 }
 
 impl From<TerminalEvent> for EventType {
@@ -917,6 +940,10 @@ impl<'a, N: Notify + 'a, T: EventListener> input::ActionContext<T> for ActionCon
         self.pane_commands.push(PaneCommand::NewTab);
     }
 
+    fn create_agent_tab(&mut self) {
+        self.pane_commands.push(PaneCommand::NewAgentTab);
+    }
+
     fn split_pane(&mut self, direction: SplitDirection) {
         self.pane_commands.push(PaneCommand::Split(direction));
     }
@@ -927,6 +954,10 @@ impl<'a, N: Notify + 'a, T: EventListener> input::ActionContext<T> for ActionCon
 
     fn focus_pane(&mut self, direction: FocusDirection) {
         self.pane_commands.push(PaneCommand::Focus(direction));
+    }
+
+    fn dismiss_tab(&mut self) {
+        self.pane_commands.push(PaneCommand::DismissTab);
     }
 
     fn close_window(&mut self) {
@@ -1989,6 +2020,7 @@ impl input::Processor<EventProxy, ActionContext<'_, Notifier, EventProxy>> {
                 EventType::Message(_)
                 | EventType::ConfigReload(_)
                 | EventType::CreateWindow(_)
+                | EventType::ActivityTick
                 | EventType::Frame => (),
             },
             WinitEvent::WindowEvent { event, .. } => {

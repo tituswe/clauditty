@@ -127,7 +127,7 @@ This section documents the *[window]* table of the configuration file.
 	*Buttonless* _(macOS only)_
 		Title bar, transparent background and no title bar buttons.
 
-	Default: _"Full"_
+	Default: _"Transparent"_ on macOS, _"Full"_ elsewhere
 
 *opacity* = _<float>_
 
@@ -268,7 +268,7 @@ macOS:     { family = _"Menlo"_,     style = _"Regular"_ }
 
 	Font size in points.
 
-	Default: _11.25_
+	Default: _13.25_
 
 *offset* = { x = _<integer>_, y = _<integer>_ }
 
@@ -303,18 +303,18 @@ Colors are specified using their hexadecimal values with a _#_ prefix: _#RRGGBB_
 
 	*foreground* = _"<string>"_
 
-		Default: _"#d8d8d8"_
+		Default: _"#e6edf3"_
 
 	*background* = _"<string>"_
 
-		Default: _"#181818"_
+		Default: _"#0d1117"_
 
 	*dim_foreground* = _"<string>"_
 
 		If this is not set, the color is automatically calculated based on the
 		foreground color.
 
-		Default: _"#828482"_
+		Default: _"#979ca0"_
 
 	*bright_foreground* = _"<string>"_
 
@@ -352,11 +352,11 @@ Colors are specified using their hexadecimal values with a _#_ prefix: _#RRGGBB_
 
 	*matches* = { foreground = _"<string>"_, background = _"<string>"_ }
 
-		Default: { foreground = _"#181818"_, background = _"#ac4242"_ }
+		Default: { foreground = _"#0d1117"_, background = _"#ff7b72"_ }
 
 	*focused_match* = { foreground = _"<string>"_, background = _"<string>"_ }
 
-		Default: { foreground = _"#181818"_, background = _"#f4bf75"_ }
+		Default: { foreground = _"#0d1117"_, background = _"#d29922"_ }
 
 *hints*
 
@@ -369,7 +369,7 @@ Colors are specified using their hexadecimal values with a _#_ prefix: _#RRGGBB_
 		Allowed values are hexadecimal colors like _#ff00ff_, or
 		_CellForeground_/_CellBackground_, which references the affected cell.
 
-		Default: { foreground = _"#181818"_, background = _"#f4bf75"_ }
+		Default: { foreground = _"#0d1117"_, background = _"#d29922"_ }
 
 	*end* = { foreground = _"<string>"_, background = _"<string>"_ }
 
@@ -378,7 +378,7 @@ Colors are specified using their hexadecimal values with a _#_ prefix: _#RRGGBB_
 		Allowed values are hexadecimal colors like _#ff00ff_, or
 		_CellForeground_/_CellBackground_, which references the affected cell.
 
-		Default: { foreground = _"#181818"_, background = _"#ac4242"_ }
+		Default: { foreground = _"#0d1117"_, background = _"#ff7b72"_ }
 
 *line_indicator* = { foreground = _"<string>"_, background = _"<string>"_ }
 
@@ -394,7 +394,7 @@ Colors are specified using their hexadecimal values with a _#_ prefix: _#RRGGBB_
 	Color used for the footer bar on the bottom, used by search regex input,
 	hyperlink URI preview, etc.
 
-	Default: { foreground = _"#181818"_, background = _"#d8d8d8"_ }
+	Default: { foreground = _"#0d1117"_, background = _"#e6edf3"_ }
 
 *selection* = { text = _"<string>"_, background = _"<string>"_ }
 
@@ -410,42 +410,42 @@ Colors are specified using their hexadecimal values with a _#_ prefix: _#RRGGBB_
 	This section documents the *[colors.normal]* table of the configuration.
 
 	*black* = _"<string>"_
-		Default: _"#181818"_
+		Default: _"#484f58"_
 	*red* = _"<string>"_
-		Default: _"#ac4242"_
+		Default: _"#ff7b72"_
 	*green* = _"<string>"_
-		Default: _"#90a959"_
+		Default: _"#3fb950"_
 	*yellow* = _"<string>"_
-		Default: _"#f4bf75"_
+		Default: _"#d29922"_
 	*blue* = _"<string>"_
-		Default: _"#6a9fb5"_
+		Default: _"#58a6ff"_
 	*magenta* = _"<string>"_
-		Default: _"#aa759f"_
+		Default: _"#bc8cff"_
 	*cyan* = _"<string>"_
-		Default: _"#75b5aa"_
+		Default: _"#39c5cf"_
 	*white* = _"<string>"_
-		Default: _"#d8d8d8"_
+		Default: _"#b1bac4"_
 
 *bright*
 
 	This section documents the *[colors.bright]* table of the configuration.
 
 	*black* = _"<string>"_
-		Default: _"#6b6b6b"_
+		Default: _"#6e7681"_
 	*red* = _"<string>"_
-		Default: _"#c55555"_
+		Default: _"#ffa198"_
 	*green* = _"<string>"_
-		Default: _"#aac474"_
+		Default: _"#56d364"_
 	*yellow* = _"<string>"_
-		Default: _"#feca88"_
+		Default: _"#e3b341"_
 	*blue* = _"<string>"_
-		Default: _"#82b8c8"_
+		Default: _"#79c0ff"_
 	*magenta* = _"<string>"_
-		Default: _"#c28cb8"_
+		Default: _"#d2a8ff"_
 	*cyan* = _"<string>"_
-		Default: _"#93d3c3"_
+		Default: _"#56d4dd"_
 	*white* = _"<string>"_
-		Default: _"#f8f8f8"_
+		Default: _"#ffffff"_
 
 *dim*
 
@@ -455,21 +455,21 @@ Colors are specified using their hexadecimal values with a _#_ prefix: _#RRGGBB_
 	on the _normal_ colors.
 
 	*black* = _"<string>"_
-		Default: _"#0f0f0f"_
+		Default: _"#2f343a"_
 	*red* = _"<string>"_
-		Default: _"#712b2b"_
+		Default: _"#a8514b"_
 	*green* = _"<string>"_
-		Default: _"#5f6f3a"_
+		Default: _"#297a34"_
 	*yellow* = _"<string>"_
-		Default: _"#a17e4d"_
+		Default: _"#8a6416"_
 	*blue* = _"<string>"_
-		Default: _"#456877"_
+		Default: _"#3a6da8"_
 	*magenta* = _"<string>"_
-		Default: _"#704d68"_
+		Default: _"#7c5ca8"_
 	*cyan* = _"<string>"_
-		Default: _"#4d7770"_
+		Default: _"#258288"_
 	*white* = _"<string>"_
-		Default: _"#8e8e8e"_
+		Default: _"#747a81"_
 
 *indexed_colors* = [{ index = _<integer>_, color = _"<string>"_ },]
 
@@ -605,11 +605,11 @@ This section documents the *[tabs]* table of the configuration file.
 
 *command* = _"<string>"_
 
-	Command run in the main pane of each new tab. It runs in an interactive
-	login shell, so it's found on your _$PATH_. When the command exits, the
-	pane keeps running your shell.
+	Command run by new agent tabs and the first tab of a window. It runs in an
+	interactive login shell, so it's found on your _$PATH_. When the command
+	exits, the pane keeps running your shell.
 
-	An empty command starts a plain shell. Panes opened with a split always
+	An empty command starts a plain shell. Terminal tabs and split panes always
 	start a plain shell.
 
 	Default: _"claude"_
@@ -851,13 +851,17 @@ _https://docs.rs/winit/latest/winit/keyboard/enum.Key.html#variant.Dead_
 		*Quit*
 			Close the Clauditty window.
 		*CreateNewTab*
-			Create a new tab in the sidebar.
+			Create a new tab running a plain shell.
+		*CreateAgentTab*
+			Create a new tab running _tabs.command_, Claude Code by default.
 		*SplitRight*
 			Split the focused pane, opening a new pane to the right.
 		*SplitDown*
 			Split the focused pane, opening a new pane below.
 		*ClosePane*
 			Close the focused pane, closing the tab when it was the last pane.
+		*DismissTab*
+			Mark the active tab as read and go to the first other tab in the sidebar.
 		*FocusPaneLeft*
 			Focus the pane to the left.
 		*FocusPaneRight*

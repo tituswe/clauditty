@@ -27,12 +27,14 @@ use winit::raw_window_handle::{HasDisplayHandle, RawDisplayHandle};
 
 use clauditty_terminal::tty;
 
+mod activity;
 mod cli;
 mod clipboard;
 mod config;
 mod daemon;
 mod display;
 mod event;
+mod harness;
 mod input;
 mod layout;
 mod logging;

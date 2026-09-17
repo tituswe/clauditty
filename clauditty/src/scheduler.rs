@@ -29,6 +29,7 @@ pub enum Topic {
     BlinkCursor,
     BlinkTimeout,
     Frame,
+    Activity,
 }
 
 /// Event scheduled to be emitted at a specific time.

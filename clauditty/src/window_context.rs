@@ -16,8 +16,9 @@ use glutin::platform::x11::X11GlConfigExt;
 use log::{error, info};
 use serde_json as json;
 use winit::dpi::PhysicalPosition;
-use winit::event::{ElementState, Event as WinitEvent, Modifiers, WindowEvent};
+use winit::event::{ElementState, Event as WinitEvent, Ime, Modifiers, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoopProxy};
+use winit::keyboard::{Key, NamedKey};
 use winit::raw_window_handle::HasDisplayHandle;
 use winit::window::{CursorIcon, WindowId};
 
@@ -26,12 +27,14 @@ use clauditty_terminal::grid::Dimensions;
 use clauditty_terminal::term::test::TermSize;
 use clauditty_terminal::tty;
 
+use crate::activity::{self, Activity};
 use crate::cli::{ParsedOptions, WindowOptions};
 use crate::clipboard::Clipboard;
 use crate::config::UiConfig;
+use crate::config::window::Decorations;
 #[cfg(not(any(windows, target_os = "openbsd")))]
 use crate::daemon::foreground_process_path;
-use crate::display::sidebar::{self, SidebarTab};
+use crate::display::sidebar::{self, PaneBorder, SidebarTab, TabGroup};
 use crate::display::window::Window;
 use crate::display::{Display, SizeInfo};
 use crate::event::{ActionContext, Event, EventType, Mouse, TouchPurpose};
@@ -39,18 +42,22 @@ use crate::layout::{self, FocusDirection, Layout, PaneId, Rect, SplitDirection};
 #[cfg(unix)]
 use crate::logging::LOG_TARGET_IPC_CONFIG;
 use crate::message_bar::MessageBuffer;
-use crate::pane::{Pane, PaneApp};
+use crate::pane::Pane;
 use crate::scheduler::Scheduler;
 use crate::{input, renderer};
 
 /// Change to the tabs or panes of a window, requested by an action.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PaneCommand {
+    /// New tab running `tabs.command`, like Claude Code.
+    NewAgentTab,
+    /// New tab running a plain shell.
     NewTab,
     Split(SplitDirection),
     ClosePane,
     CloseWindow,
     Focus(FocusDirection),
+    DismissTab,
     SelectTab(TabSelection),
 }
 
@@ -62,6 +69,12 @@ pub enum TabSelection {
     Index(usize),
     Last,
 }
+
+/// Height of the macOS title bar in points.
+const TITLE_BAR_HEIGHT: f32 = 28.;
+
+/// Spinner frames for working tabs.
+const SPINNER: [char; 10] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 
 /// A tab in the sidebar, holding a split layout of panes.
 struct Tab {
@@ -406,17 +419,20 @@ impl WindowContext {
         let window_size = self.display.window_size_info;
         let gap = self.divider_width();
         let mut dividers = tab.layout.dividers(self.terminal_area(), gap);
-        dividers.push(Rect::new(sidebar::sidebar_width(&window_size), 0., gap, window_size.height()));
+        let top = self.title_bar_height();
+        let sidebar_width = sidebar::sidebar_width(&window_size);
+        dividers.push(Rect::new(sidebar_width, top, gap, window_size.height() - top));
 
-        // Outline the focused pane when the tab is split.
-        let focused_rect = self
-            .panes
-            .get(&tab.focused)
-            .filter(|_| matches!(tab.layout, Layout::Split { .. }))
-            .map(|pane| (pane.rect, pane_border_width(self.display.window.scale_factor as f32)));
+        // Outline the focused pane in the color of its harness.
+        let scale_factor = self.display.window.scale_factor as f32;
+        let border = self.panes.get_mut(&tab.focused).map(|pane| PaneBorder {
+            rect: pane.rect,
+            width: pane_border_width(scale_factor),
+            color: pane.harness().accent_color(),
+        });
 
         let sidebar_tabs = self.sidebar_tabs();
-        self.display.draw_sidebar(&sidebar_tabs, &dividers, focused_rect);
+        self.display.draw_sidebar(&sidebar_tabs, &dividers, border, top);
 
         self.display.end_frame(scheduler);
     }
@@ -633,9 +649,16 @@ impl WindowContext {
             WindowEvent::MouseInput { device_id, state: ElementState::Pressed, .. } => {
                 // Clicks in the sidebar switch tabs.
                 let window_size = self.display.window_size_info;
+                let top = self.title_bar_height();
+                if y < top {
+                    return Vec::new();
+                }
                 if x < sidebar::sidebar_width(&window_size) {
-                    if let Some(index) = sidebar::tab_at(&window_size, x, y) {
-                        self.select_tab(TabSelection::Index(index));
+                    let order = self.tab_order();
+                    let groups: Vec<_> =
+                        order.iter().map(|index| tab_group(self.tab_activity(*index))).collect();
+                    if let Some(position) = sidebar::tab_at(&window_size, &groups, x, y - top) {
+                        self.select_tab(TabSelection::Index(position));
                     }
                     return Vec::new();
                 }
@@ -668,6 +691,22 @@ impl WindowContext {
                 self.window_focused = is_focused;
                 vec![(focused, WinitEvent::WindowEvent { window_id, event: window_event })]
             },
+            WindowEvent::KeyboardInput { event: ref key, .. } => {
+                if key.state == ElementState::Pressed {
+                    self.on_pane_input(focused);
+
+                    // Replying to a ready tab marks it as read.
+                    let is_enter = key.logical_key == Key::Named(NamedKey::Enter);
+                    if is_enter && !self.modifiers.state().super_key() {
+                        self.mark_tab_read(self.active_tab);
+                    }
+                }
+                vec![(focused, WinitEvent::WindowEvent { window_id, event: window_event })]
+            },
+            WindowEvent::Ime(Ime::Commit(_)) => {
+                self.on_pane_input(focused);
+                vec![(focused, WinitEvent::WindowEvent { window_id, event: window_event })]
+            },
             event => vec![(focused, WinitEvent::WindowEvent { window_id, event })],
         }
     }
@@ -681,15 +720,23 @@ impl WindowContext {
     ) -> WinitEvent<Event> {
         let position =
             PhysicalPosition::new(position.x - rect.x as f64, position.y - rect.y as f64);
-        WinitEvent::WindowEvent { window_id, event: WindowEvent::CursorMoved { device_id, position } }
+        let event = WindowEvent::CursorMoved { device_id, position };
+        WinitEvent::WindowEvent { window_id, event }
     }
 
     /// Apply tab and pane changes requested by actions.
     fn apply_pane_commands(&mut self) {
         for command in mem::take(&mut self.pane_commands) {
             let result = match command {
-                PaneCommand::NewTab => {
+                PaneCommand::NewAgentTab => {
                     let pty_config = self.tab_pty_config(self.focused_working_directory());
+                    self.open_tab(&pty_config)
+                },
+                PaneCommand::NewTab => {
+                    let mut pty_config = self.config.pty_config();
+                    if let Some(working_directory) = self.focused_working_directory() {
+                        pty_config.working_directory = Some(working_directory);
+                    }
                     self.open_tab(&pty_config)
                 },
                 PaneCommand::Split(direction) => self.split_focused_pane(direction),
@@ -705,6 +752,10 @@ impl WindowContext {
                 },
                 PaneCommand::Focus(direction) => {
                     self.move_focus(direction);
+                    Ok(())
+                },
+                PaneCommand::DismissTab => {
+                    self.dismiss_tab();
                     Ok(())
                 },
                 PaneCommand::SelectTab(selection) => {
@@ -816,13 +867,17 @@ impl WindowContext {
             return;
         }
 
-        self.active_tab = match selection {
-            TabSelection::Next => (self.active_tab + 1) % count,
-            TabSelection::Previous => (self.active_tab + count - 1) % count,
+        // Tabs are numbered in sidebar order.
+        let order = self.tab_order();
+        let position = order.iter().position(|index| *index == self.active_tab).unwrap_or(0);
+        let position = match selection {
+            TabSelection::Next => (position + 1) % count,
+            TabSelection::Previous => (position + count - 1) % count,
             TabSelection::Index(index) if index < count => index,
             TabSelection::Index(_) => return,
             TabSelection::Last => count - 1,
         };
+        self.active_tab = order[position];
 
         self.on_focus_change();
     }
@@ -841,11 +896,13 @@ impl WindowContext {
             return;
         }
 
-        // Enter the new tab from the side we came from.
+        // Enter the tab above or below in the sidebar from the side we came from.
+        let order = self.tab_order();
+        let position = order.iter().position(|index| *index == self.active_tab).unwrap_or(0);
         let (index, edge) = match direction {
-            FocusDirection::Up if self.active_tab > 0 => (self.active_tab - 1, FocusDirection::Down),
-            FocusDirection::Down if self.active_tab + 1 < self.tabs.len() => {
-                (self.active_tab + 1, FocusDirection::Up)
+            FocusDirection::Up if position > 0 => (order[position - 1], FocusDirection::Down),
+            FocusDirection::Down if position + 1 < order.len() => {
+                (order[position + 1], FocusDirection::Up)
             },
             _ => return,
         };
@@ -857,6 +914,107 @@ impl WindowContext {
         self.active_tab = index;
 
         self.on_focus_change();
+    }
+
+    /// Mark the active tab as read and go to the first other tab in the sidebar.
+    ///
+    /// Working tabs keep working, only ready tabs move to idle.
+    fn dismiss_tab(&mut self) {
+        self.mark_tab_read(self.active_tab);
+
+        let order = self.tab_order();
+        if let Some(&next) = order.iter().find(|index| **index != self.active_tab) {
+            self.active_tab = next;
+        }
+
+        self.on_focus_change();
+    }
+
+    /// Mark every ready pane of a tab as read.
+    fn mark_tab_read(&mut self, index: usize) {
+        let Some(tab) = self.tabs.get(index) else { return };
+        for pane_id in tab.layout.panes() {
+            if let Some(pane) = self.panes.get_mut(&pane_id) {
+                pane.activity.mark_read();
+            }
+        }
+        self.dirty = true;
+    }
+
+    /// Record the user typing into a pane.
+    fn on_pane_input(&mut self, pane_id: PaneId) {
+        if let Some(pane) = self.panes.get_mut(&pane_id) {
+            pane.activity.on_input(Instant::now());
+        }
+    }
+
+    /// Record output printed by a pane.
+    pub fn on_pane_output(&mut self, pane_id: PaneId) {
+        if let Some(pane) = self.panes.get_mut(&pane_id) {
+            pane.activity.on_output(Instant::now());
+        }
+    }
+
+    /// Check which panes started or finished working.
+    pub fn update_activity(&mut self) {
+        let now = Instant::now();
+        let watching = self.window_focused && !self.occluded;
+
+        let mut changed = false;
+        let mut busy = false;
+        for (index, tab) in self.tabs.iter().enumerate() {
+            // Work finishing in the tab the user is looking at doesn't need their attention.
+            let visible = watching && index == self.active_tab;
+
+            for pane_id in tab.layout.panes() {
+                let Some(pane) = self.panes.get_mut(&pane_id) else { continue };
+                let rule = pane.harness().activity_rule();
+                let shell_in_front = pane.process().shell_in_front();
+                changed |= pane.activity.update(now, rule, shell_in_front, visible);
+                busy |= pane.activity.activity() != Activity::Idle;
+            }
+        }
+
+        // Redraw for new states, and to keep spinners and timers moving.
+        if changed || busy {
+            self.dirty = true;
+            if self.display.window.has_frame {
+                self.display.window.request_redraw();
+            }
+        }
+    }
+
+    /// Tab indices in sidebar order: ready tabs oldest first, then working, then idle.
+    fn tab_order(&self) -> Vec<usize> {
+        let mut order: Vec<_> =
+            (0..self.tabs.len()).map(|index| (index, self.tab_activity(index))).collect();
+        order.sort_by_key(|(index, activity)| match activity {
+            Activity::Ready { since } => (0, Some(*since), *index),
+            Activity::Working { .. } => (1, None, *index),
+            Activity::Idle => (2, None, *index),
+        });
+        order.into_iter().map(|(index, _)| index).collect()
+    }
+
+    /// Activity of a tab, taking the most urgent of its panes.
+    fn tab_activity(&self, index: usize) -> Activity {
+        let Some(tab) = self.tabs.get(index) else { return Activity::Idle };
+
+        let mut ready = None;
+        let mut working = None;
+        for pane in tab.layout.panes().iter().filter_map(|id| self.panes.get(id)) {
+            match pane.activity.activity() {
+                Activity::Ready { since } => ready = ready.min(Some(since)).or(Some(since)),
+                Activity::Working { since } => working = working.min(Some(since)).or(Some(since)),
+                Activity::Idle => (),
+            }
+        }
+
+        match (ready, working) {
+            (Some(since), _) => Activity::Ready { since },
+            (None, Some(since)) => Activity::Working { since },
+            (None, None) => Activity::Idle,
+        }
     }
 
     /// Focus a pane in the active tab.
@@ -1048,7 +1206,24 @@ impl WindowContext {
     fn terminal_area(&self) -> Rect {
         let window_size = self.display.window_size_info;
         let x = sidebar::sidebar_width(&window_size) + self.divider_width();
-        Rect::new(x, 0., (window_size.width() - x).max(0.), window_size.height())
+        let y = self.title_bar_height();
+        Rect::new(x, y, (window_size.width() - x).max(0.), (window_size.height() - y).max(0.))
+    }
+
+    /// Height of the title bar drawn over the window's content.
+    ///
+    /// With transparent decorations on macOS, the title bar shows the terminal background.
+    fn title_bar_height(&self) -> f32 {
+        let transparent = matches!(
+            self.config.window.decorations,
+            Decorations::Transparent | Decorations::Buttonless
+        );
+
+        if cfg!(target_os = "macos") && transparent {
+            (TITLE_BAR_HEIGHT * self.display.window.scale_factor as f32).round()
+        } else {
+            0.
+        }
     }
 
     /// Width of the lines between panes.
@@ -1056,31 +1231,61 @@ impl WindowContext {
         self.display.window.scale_factor.round().max(1.) as f32
     }
 
-    /// Tabs as shown in the sidebar, previewing each tab's focused pane.
+    /// Tabs in sidebar order, previewing each tab's focused pane.
     fn sidebar_tabs(&mut self) -> Vec<SidebarTab> {
         let home = home::home_dir();
+        let now = Instant::now();
 
-        let mut sidebar_tabs = Vec::with_capacity(self.tabs.len());
-        for (index, tab) in self.tabs.iter().enumerate() {
-            let mut pane = self.panes.get_mut(&tab.focused);
-            let app = pane.as_deref_mut().map_or(PaneApp::Shell, Pane::app);
+        let order = self.tab_order();
+        let mut sidebar_tabs = Vec::with_capacity(order.len());
+        for index in order {
+            let activity = self.tab_activity(index);
+            let tab = &self.tabs[index];
+            let pane_count = tab.layout.panes().len();
+
+            let Some(pane) = self.panes.get_mut(&tab.focused) else { continue };
+            let harness = pane.harness();
+            let title = harness.title(&pane.process());
+            let preview = pane.preview(harness, sidebar::PREVIEW_LINES);
             let working_directory = pane
-                .as_deref_mut()
-                .and_then(Pane::working_directory)
+                .working_directory()
                 .map(|path| sidebar::display_path(path, home.as_deref()))
                 .unwrap_or_default();
-            let preview = pane.map(|pane| pane.preview(sidebar::PREVIEW_LINES)).unwrap_or_default();
+
+            let status = match activity {
+                Activity::Ready { since } => {
+                    format!("{} ago", activity::format_duration(now.duration_since(since)))
+                },
+                Activity::Working { since } => {
+                    let elapsed = now.duration_since(since);
+                    let frame = SPINNER[(elapsed.as_millis() / 500) as usize % SPINNER.len()];
+                    format!("{frame} {}", activity::format_duration(elapsed))
+                },
+                Activity::Idle if pane_count > 1 => format!("{pane_count} panes"),
+                Activity::Idle => String::new(),
+            };
 
             sidebar_tabs.push(SidebarTab {
-                title: app.name().to_owned(),
-                claude: app == PaneApp::Claude,
+                group: tab_group(activity),
+                title,
+                icon: harness.icon(),
+                accent: harness.accent_color(),
                 preview,
                 working_directory,
-                pane_count: tab.layout.panes().len(),
+                status,
                 active: index == self.active_tab,
             });
         }
         sidebar_tabs
+    }
+}
+
+/// Sidebar group for a tab's activity.
+fn tab_group(activity: Activity) -> TabGroup {
+    match activity {
+        Activity::Ready { .. } => TabGroup::Ready,
+        Activity::Working { .. } => TabGroup::Working,
+        Activity::Idle => TabGroup::Idle,
     }
 }
 

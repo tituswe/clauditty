@@ -19,54 +19,17 @@ use clauditty_terminal::term::Term;
 use clauditty_terminal::term::cell::Flags;
 use clauditty_terminal::tty;
 
+use crate::activity::ActivityTracker;
 use crate::config::UiConfig;
 #[cfg(not(any(windows, target_os = "openbsd")))]
 use crate::daemon::{foreground_process_path, foreground_process_program};
 use crate::display::SizeInfo;
 use crate::event::{Event, EventProxy, InlineSearchState, SearchState};
+use crate::harness::{self, Harness, PaneProcess};
 use crate::layout::{PaneId, Rect};
 
 /// How often the running program and working directory are looked up.
 const INFO_REFRESH_INTERVAL: Duration = Duration::from_millis(500);
-
-/// Programs shown as a plain terminal.
-const SHELLS: &[&str] = &["sh", "bash", "zsh", "fish", "dash", "ksh", "tcsh", "csh", "nu", "login"];
-
-/// Program running in a pane.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum PaneApp {
-    Claude,
-    Shell,
-    Program(String),
-}
-
-impl PaneApp {
-    /// Name shown in the sidebar.
-    pub fn name(&self) -> &str {
-        match self {
-            PaneApp::Claude => "Claude Code",
-            PaneApp::Shell => "Terminal",
-            PaneApp::Program(name) => name,
-        }
-    }
-
-    /// Detect the app from the foreground program and the title it set.
-    fn detect(program: Option<&Path>, title: Option<&str>) -> Self {
-        let name = program.and_then(Path::file_name).and_then(|name| name.to_str());
-        let name = name.map(|name| name.trim_start_matches('-'));
-
-        match name {
-            Some(name) if SHELLS.contains(&name) => PaneApp::Shell,
-            // Claude Code installs versions as `claude/versions/<version>`.
-            _ if program.is_some_and(|path| path.iter().any(|part| part == "claude")) => {
-                PaneApp::Claude
-            },
-            _ if title.is_some_and(|title| title.contains("Claude Code")) => PaneApp::Claude,
-            Some(name) => PaneApp::Program(name.to_owned()),
-            None => PaneApp::Shell,
-        }
-    }
-}
 
 /// Terminal, shell and per-terminal UI state of one pane.
 pub struct Pane {
@@ -83,6 +46,9 @@ pub struct Pane {
 
     /// Title set by the running program.
     pub title: Option<String>,
+
+    /// Whether the pane is working, ready or idle.
+    pub activity: ActivityTracker,
 
     /// Foreground program and its working directory, looked up at most every
     /// [`INFO_REFRESH_INTERVAL`].
@@ -163,6 +129,7 @@ impl Pane {
             size_info,
             rect,
             title: None,
+            activity: Default::default(),
             program: None,
             working_directory: None,
             info_updated: None,
@@ -173,10 +140,17 @@ impl Pane {
         })
     }
 
-    /// Program running in the pane.
-    pub fn app(&mut self) -> PaneApp {
+    /// Harness running in the pane.
+    pub fn harness(&mut self) -> &'static dyn Harness {
         self.refresh_info();
-        PaneApp::detect(self.program.as_deref(), self.title.as_deref())
+        harness::detect(&self.process())
+    }
+
+    /// Program running in the pane and the title it set.
+    ///
+    /// Call [`Self::harness`] first to refresh the program.
+    pub fn process(&self) -> PaneProcess<'_> {
+        PaneProcess { program: self.program.as_deref(), title: self.title.as_deref() }
     }
 
     /// Working directory of the program running in the pane.
@@ -185,30 +159,23 @@ impl Pane {
         self.working_directory.as_deref()
     }
 
-    /// Last lines of text on screen, skipping borders and blank lines.
-    pub fn preview(&self, max_lines: usize) -> Vec<String> {
+    /// Lines previewed on the pane's tab, picked by its harness.
+    pub fn preview(&self, harness: &dyn Harness, max_lines: usize) -> Vec<String> {
         let terminal = self.terminal.lock();
         let grid = terminal.grid();
 
-        let mut lines = Vec::new();
-        for line in (0..grid.screen_lines()).rev() {
-            let row = &grid[Line(line as i32)];
-            let text: String = (0..grid.columns())
-                .map(|column| &row[Column(column)])
-                .filter(|cell| !cell.flags.contains(Flags::WIDE_CHAR_SPACER))
-                .map(|cell| cell.c)
-                .collect();
+        let screen: Vec<String> = (0..grid.screen_lines())
+            .map(|line| {
+                let row = &grid[Line(line as i32)];
+                (0..grid.columns())
+                    .map(|column| &row[Column(column)])
+                    .filter(|cell| !cell.flags.contains(Flags::WIDE_CHAR_SPACER))
+                    .map(|cell| cell.c)
+                    .collect()
+            })
+            .collect();
 
-            if let Some(text) = clean_preview_line(&text) {
-                lines.push(text);
-                if lines.len() == max_lines {
-                    break;
-                }
-            }
-        }
-
-        lines.reverse();
-        lines
+        harness.preview(&screen, max_lines)
     }
 
     fn refresh_info(&mut self) {
@@ -225,48 +192,9 @@ impl Pane {
     }
 }
 
-/// Clean up a screen line for the preview.
-///
-/// Returns `None` for lines without real content, like borders or an empty prompt.
-fn clean_preview_line(line: &str) -> Option<String> {
-    // Box drawing and block characters.
-    let is_decoration = |c: char| c.is_whitespace() || ('\u{2500}'..='\u{259f}').contains(&c);
-    let text = line.trim_matches(is_decoration);
-
-    if text.chars().filter(|c| c.is_alphanumeric()).count() < 2 {
-        return None;
-    }
-
-    Some(text.split_whitespace().collect::<Vec<_>>().join(" "))
-}
-
 impl Drop for Pane {
     fn drop(&mut self) {
         // Shutdown the terminal's PTY.
         let _ = self.notifier.0.send(Msg::Shutdown);
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn detect_app() {
-        let claude = Path::new("/Users/me/.local/share/claude/versions/2.1.274");
-        assert_eq!(PaneApp::detect(Some(claude), None), PaneApp::Claude);
-        assert_eq!(PaneApp::detect(Some(Path::new("/opt/node")), Some("✳ Claude Code")), PaneApp::Claude);
-        assert_eq!(PaneApp::detect(Some(Path::new("/bin/zsh")), Some("✳ Claude Code")), PaneApp::Shell);
-        assert_eq!(PaneApp::detect(Some(Path::new("-zsh")), None), PaneApp::Shell);
-        assert_eq!(PaneApp::detect(Some(Path::new("/usr/bin/vim")), None), PaneApp::Program("vim".into()));
-        assert_eq!(PaneApp::detect(None, None), PaneApp::Shell);
-    }
-
-    #[test]
-    fn clean_preview_lines() {
-        assert_eq!(clean_preview_line("│ > fix the   login bug   │"), Some("> fix the login bug".into()));
-        assert_eq!(clean_preview_line("╰──────────╯"), None);
-        assert_eq!(clean_preview_line("  >  "), None);
-        assert_eq!(clean_preview_line(""), None);
     }
 }

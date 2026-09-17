@@ -530,6 +530,10 @@ configuration. See *clauditty*(5) for full configuration format documentation.
 :  _"Command|Shift"_
 :[
 :  _"SplitDown"_
+|  _"Enter"_
+:  _"Command"_
+:[
+:  _"DismissTab"_
 |  _"Left"_
 :  _"Command"_
 :[
@@ -554,6 +558,10 @@ configuration. See *clauditty*(5) for full configuration format documentation.
 :  _"Command"_
 :[
 :  _"CreateNewTab"_
+|  _"T"_
+:  _"Command|Shift"_
+:[
+:  _"CreateAgentTab"_
 |  _"F"_
 :  _"Command|Control"_
 :[

@@ -54,8 +54,8 @@ pub struct HintStartColors {
 impl Default for HintStartColors {
     fn default() -> Self {
         Self {
-            foreground: CellRgb::Rgb(Rgb::new(0x18, 0x18, 0x18)),
-            background: CellRgb::Rgb(Rgb::new(0xf4, 0xbf, 0x75)),
+            foreground: CellRgb::Rgb(Rgb::new(0x0d, 0x11, 0x17)),
+            background: CellRgb::Rgb(Rgb::new(0xd2, 0x99, 0x22)),
         }
     }
 }
@@ -69,8 +69,8 @@ pub struct HintEndColors {
 impl Default for HintEndColors {
     fn default() -> Self {
         Self {
-            foreground: CellRgb::Rgb(Rgb::new(0x18, 0x18, 0x18)),
-            background: CellRgb::Rgb(Rgb::new(0xac, 0x42, 0x42)),
+            foreground: CellRgb::Rgb(Rgb::new(0x0d, 0x11, 0x17)),
+            background: CellRgb::Rgb(Rgb::new(0xff, 0x7b, 0x72)),
         }
     }
 }
@@ -140,8 +140,8 @@ pub struct FocusedMatchColors {
 impl Default for FocusedMatchColors {
     fn default() -> Self {
         Self {
-            background: CellRgb::Rgb(Rgb::new(0xf4, 0xbf, 0x75)),
-            foreground: CellRgb::Rgb(Rgb::new(0x18, 0x18, 0x18)),
+            background: CellRgb::Rgb(Rgb::new(0xd2, 0x99, 0x22)),
+            foreground: CellRgb::Rgb(Rgb::new(0x0d, 0x11, 0x17)),
         }
     }
 }
@@ -155,8 +155,8 @@ pub struct MatchColors {
 impl Default for MatchColors {
     fn default() -> Self {
         Self {
-            background: CellRgb::Rgb(Rgb::new(0xac, 0x42, 0x42)),
-            foreground: CellRgb::Rgb(Rgb::new(0x18, 0x18, 0x18)),
+            background: CellRgb::Rgb(Rgb::new(0xff, 0x7b, 0x72)),
+            foreground: CellRgb::Rgb(Rgb::new(0x0d, 0x11, 0x17)),
         }
     }
 }
@@ -175,11 +175,12 @@ pub struct PrimaryColors {
     pub dim_foreground: Option<Rgb>,
 }
 
+// Default colors are the GitHub Dark Default theme.
 impl Default for PrimaryColors {
     fn default() -> Self {
         PrimaryColors {
-            background: Rgb::new(0x18, 0x18, 0x18),
-            foreground: Rgb::new(0xd8, 0xd8, 0xd8),
+            background: Rgb::new(0x0d, 0x11, 0x17),
+            foreground: Rgb::new(0xe6, 0xed, 0xf3),
             bright_foreground: Default::default(),
             dim_foreground: Default::default(),
         }
@@ -201,14 +202,14 @@ pub struct NormalColors {
 impl Default for NormalColors {
     fn default() -> Self {
         NormalColors {
-            black: Rgb::new(0x18, 0x18, 0x18),
-            red: Rgb::new(0xac, 0x42, 0x42),
-            green: Rgb::new(0x90, 0xa9, 0x59),
-            yellow: Rgb::new(0xf4, 0xbf, 0x75),
-            blue: Rgb::new(0x6a, 0x9f, 0xb5),
-            magenta: Rgb::new(0xaa, 0x75, 0x9f),
-            cyan: Rgb::new(0x75, 0xb5, 0xaa),
-            white: Rgb::new(0xd8, 0xd8, 0xd8),
+            black: Rgb::new(0x48, 0x4f, 0x58),
+            red: Rgb::new(0xff, 0x7b, 0x72),
+            green: Rgb::new(0x3f, 0xb9, 0x50),
+            yellow: Rgb::new(0xd2, 0x99, 0x22),
+            blue: Rgb::new(0x58, 0xa6, 0xff),
+            magenta: Rgb::new(0xbc, 0x8c, 0xff),
+            cyan: Rgb::new(0x39, 0xc5, 0xcf),
+            white: Rgb::new(0xb1, 0xba, 0xc4),
         }
     }
 }
@@ -227,18 +228,15 @@ pub struct BrightColors {
 
 impl Default for BrightColors {
     fn default() -> Self {
-        // Generated with oklab by multiplying brightness by 1.12 and then adjusting numbers
-        // to make them look "nicer". Yellow color was generated the same way, however the first
-        // srgb representable color was picked.
         BrightColors {
-            black: Rgb::new(0x6b, 0x6b, 0x6b),
-            red: Rgb::new(0xc5, 0x55, 0x55),
-            green: Rgb::new(0xaa, 0xc4, 0x74),
-            yellow: Rgb::new(0xfe, 0xca, 0x88),
-            blue: Rgb::new(0x82, 0xb8, 0xc8),
-            magenta: Rgb::new(0xc2, 0x8c, 0xb8),
-            cyan: Rgb::new(0x93, 0xd3, 0xc3),
-            white: Rgb::new(0xf8, 0xf8, 0xf8),
+            black: Rgb::new(0x6e, 0x76, 0x81),
+            red: Rgb::new(0xff, 0xa1, 0x98),
+            green: Rgb::new(0x56, 0xd3, 0x64),
+            yellow: Rgb::new(0xe3, 0xb3, 0x41),
+            blue: Rgb::new(0x79, 0xc0, 0xff),
+            magenta: Rgb::new(0xd2, 0xa8, 0xff),
+            cyan: Rgb::new(0x56, 0xd4, 0xdd),
+            white: Rgb::new(0xff, 0xff, 0xff),
         }
     }
 }
@@ -259,14 +257,14 @@ impl Default for DimColors {
     fn default() -> Self {
         // Generated with builtin clauditty's color dimming function.
         DimColors {
-            black: Rgb::new(0x0f, 0x0f, 0x0f),
-            red: Rgb::new(0x71, 0x2b, 0x2b),
-            green: Rgb::new(0x5f, 0x6f, 0x3a),
-            yellow: Rgb::new(0xa1, 0x7e, 0x4d),
-            blue: Rgb::new(0x45, 0x68, 0x77),
-            magenta: Rgb::new(0x70, 0x4d, 0x68),
-            cyan: Rgb::new(0x4d, 0x77, 0x70),
-            white: Rgb::new(0x8e, 0x8e, 0x8e),
+            black: Rgb::new(0x2f, 0x34, 0x3a),
+            red: Rgb::new(0xa8, 0x51, 0x4b),
+            green: Rgb::new(0x29, 0x7a, 0x34),
+            yellow: Rgb::new(0x8a, 0x64, 0x16),
+            blue: Rgb::new(0x3a, 0x6d, 0xa8),
+            magenta: Rgb::new(0x7c, 0x5c, 0xa8),
+            cyan: Rgb::new(0x25, 0x82, 0x88),
+            white: Rgb::new(0x74, 0x7a, 0x81),
         }
     }
 }

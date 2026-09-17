@@ -11,18 +11,35 @@ It comes with sensible defaults and a flexible [config](#configuration). See the
 
 ## Tabs and panes
 
-Tabs live in a sidebar on the left. Each new tab runs Claude Code in its main
-pane. Split panes run your shell.
+Tabs live in a sidebar on the left. Agent tabs run Claude Code. Terminal tabs
+and split panes run your shell. The focused pane has an orange border.
 
 Each tab card shows the app in the focused pane, a preview of its last lines
 and its working directory.
 
+### Ready queue
+
+The sidebar groups tabs into three sections:
+
+- **Ready**: finished while you were away, oldest first
+- **Working**: an agent is printing, or a command is running
+- **Idle**: nothing to do
+
+`Cmd+1` always opens the top tab, so the loop is: `Cmd+1`, read, reply, repeat.
+Pressing `Enter` in a ready tab marks it as read. `Cmd+Enter` marks it as read
+and jumps to the first other tab in the sidebar.
+
+Claude Code counts as finished after 2 seconds without output. A command counts
+once the prompt is back, if it ran for 5 seconds or more.
+
 | Shortcut            | Action                             |
 | ------------------- | ---------------------------------- |
-| `Cmd+T`             | New tab                            |
+| `Cmd+Shift+T`       | New Claude Code tab                |
+| `Cmd+T`             | New terminal tab                   |
 | `Cmd+D`             | Split pane to the right            |
 | `Cmd+Shift+D`       | Split pane down                    |
 | `Cmd+W`             | Close pane, or tab if last pane    |
+| `Cmd+Enter`         | Mark tab read, go to next tab      |
 | `Cmd+Arrow`         | Move to the pane in that direction |
 | `Cmd+1` to `Cmd+9`  | Switch tab                         |
 | `Cmd+Shift+[` / `]` | Previous / next tab                |
@@ -32,8 +49,16 @@ pane goes to the next tab.
 
 Click a tab to switch to it, or a pane to focus it.
 
-Change the tab command with `tabs.command` in the config. An empty command
-starts a plain shell.
+Change the agent tab command with `tabs.command` in the config.
+
+### Harnesses
+
+Each pane is shown through a harness, like Claude Code or a plain terminal. A
+harness sets how the pane is detected, its name, icon and accent color, how its
+activity is tracked and what its tab previews.
+
+To support another agent, implement the `Harness` trait in
+`clauditty/src/harness/` and add it to `AGENTS` in `harness/mod.rs`.
 
 ## Build and run
 

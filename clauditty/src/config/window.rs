@@ -179,13 +179,19 @@ pub enum StartupMode {
     SimpleFullscreen,
 }
 
-#[derive(ConfigDeserialize, Serialize, Default, Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(ConfigDeserialize, Serialize, Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Decorations {
-    #[default]
     Full,
     Transparent,
     Buttonless,
     None,
+}
+
+impl Default for Decorations {
+    /// On macOS, the title bar blends into the terminal background.
+    fn default() -> Self {
+        if cfg!(target_os = "macos") { Decorations::Transparent } else { Decorations::Full }
+    }
 }
 
 /// Window Dimensions.
