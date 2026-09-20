@@ -134,7 +134,7 @@ This section documents the *[window]* table of the configuration file.
 	Background opacity as a floating point number from _0.0_ to _1.0_. The value
 	_0.0_ is completely transparent and _1.0_ is opaque.
 
-	Default: _0.92_
+	Default: _0.8_
 
 *blur* = _true_ | _false_ # _(works on macOS/KDE Wayland)_
 

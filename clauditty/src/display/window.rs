@@ -24,6 +24,8 @@ use std::fmt::{self, Display, Formatter};
 use {
     objc2::MainThreadMarker,
     objc2_app_kit::{NSColorSpace, NSView},
+    std::ffi::c_void,
+    std::mem,
     winit::platform::macos::{OptionAsAlt, WindowAttributesExtMacOS, WindowExtMacOS},
 };
 
@@ -203,7 +205,7 @@ impl Window {
         log::info!("Window scale factor: {scale_factor}");
         let is_x11 = matches!(window.window_handle().unwrap().as_raw(), RawWindowHandle::Xlib(_));
 
-        Ok(Self {
+        let window = Self {
             hold: options.terminal_options.hold,
             requested_redraw: false,
             title: identity.title,
@@ -214,7 +216,12 @@ impl Window {
             window,
             is_x11,
             ime_inhibitor: Default::default(),
-        })
+        };
+
+        // Blur whatever shows through a transparent window.
+        window.set_blur(config.window.blur);
+
+        Ok(window)
     }
 
     #[inline]
@@ -374,6 +381,51 @@ impl Window {
 
     pub fn set_blur(&self, blur: bool) {
         self.window.set_blur(blur);
+
+        #[cfg(target_os = "macos")]
+        self.set_background_blur(if blur { BACKGROUND_BLUR_RADIUS } else { 0 });
+    }
+
+    /// Blur whatever is behind a transparent window.
+    ///
+    /// Winit has no blur on macOS, so ask the window server directly. The call is private API,
+    /// looked up at runtime and skipped when it's missing.
+    #[cfg(target_os = "macos")]
+    fn set_background_blur(&self, radius: i32) {
+        type Connection = i32;
+        type DefaultConnection = unsafe extern "C" fn() -> Connection;
+        type SetBlurRadius = unsafe extern "C" fn(Connection, i32, i32) -> i32;
+
+        let view = match self.raw_window_handle() {
+            RawWindowHandle::AppKit(handle) => {
+                assert!(MainThreadMarker::new().is_some());
+                unsafe { handle.ns_view.cast::<NSView>().as_ref() }
+            },
+            _ => return,
+        };
+
+        let Some(window_number) = view.window().map(|window| window.windowNumber() as i32) else {
+            return;
+        };
+
+        unsafe {
+            let library = c"/System/Library/PrivateFrameworks/SkyLight.framework/SkyLight";
+            let handle = libc::dlopen(library.as_ptr(), libc::RTLD_LAZY);
+            if handle.is_null() {
+                return;
+            }
+
+            let connection = libc::dlsym(handle, c"CGSDefaultConnectionForThread".as_ptr());
+            let set_blur = libc::dlsym(handle, c"CGSSetWindowBackgroundBlurRadius".as_ptr());
+            if connection.is_null() || set_blur.is_null() {
+                log::debug!("Background blur is unavailable");
+                return;
+            }
+
+            let connection = mem::transmute::<*mut c_void, DefaultConnection>(connection);
+            let set_blur = mem::transmute::<*mut c_void, SetBlurRadius>(set_blur);
+            set_blur(connection(), window_number, radius);
+        }
     }
 
     pub fn set_maximized(&self, maximized: bool) {
@@ -483,6 +535,10 @@ impl Window {
         view.window().unwrap().setHasShadow(has_shadows);
     }
 }
+
+/// Strength of the blur behind a transparent window on macOS.
+#[cfg(target_os = "macos")]
+const BACKGROUND_BLUR_RADIUS: i32 = 32;
 
 bitflags! {
     /// IME inhibition sources.

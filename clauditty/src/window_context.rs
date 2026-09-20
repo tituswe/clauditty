@@ -432,11 +432,11 @@ impl WindowContext {
         });
 
         let sidebar_tabs = self.sidebar_tabs();
-        self.display.draw_sidebar(&sidebar_tabs, &dividers, border, top);
+        let opacity = self.config.window_opacity();
+        self.display.draw_sidebar(&sidebar_tabs, &dividers, border, top, opacity);
 
         let title = self.config.window.identity.title.clone();
-        let opacity = self.config.window_opacity();
-        self.display.draw_title_bar(&title, top, scale_factor, opacity);
+        self.display.draw_title_bar(&title, top, scale_factor);
 
         self.display.end_frame(scheduler);
     }

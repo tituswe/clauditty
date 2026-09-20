@@ -151,7 +151,7 @@ pub fn display_path(path: &Path, home: Option<&Path>) -> String {
 
 impl Display {
     /// Draw the app name in the title bar, right of the window buttons.
-    pub fn draw_title_bar(&mut self, title: &str, top: f32, scale_factor: f32, opacity: f32) {
+    pub fn draw_title_bar(&mut self, title: &str, top: f32, scale_factor: f32) {
         let window_size = self.window_size_info;
         let cell_height = window_size.cell_height();
         if top < cell_height {
@@ -178,7 +178,7 @@ impl Display {
             Point::new(0, Column(0)),
             color,
             background,
-            opacity,
+            0.,
             title.chars(),
             &size_info,
             &mut self.glyph_cache,
@@ -188,12 +188,14 @@ impl Display {
     /// Draw the sidebar, the dividers between panes and the focused pane's border.
     ///
     /// The sidebar starts `top` pixels below the top of the window, leaving room for the title bar.
+    #[allow(clippy::too_many_arguments)]
     pub fn draw_sidebar(
         &mut self,
         tabs: &[SidebarTab],
         dividers: &[Rect],
         border: Option<PaneBorder>,
         top: f32,
+        opacity: f32,
     ) {
         let window_size = self.window_size_info;
         let metrics = self.glyph_cache.font_metrics();
@@ -258,7 +260,7 @@ impl Display {
         let rows = sidebar_rows(&groups);
 
         let mut rects =
-            vec![RenderRect::new(0., 0., width, size_info.height(), colors.sidebar, 1.)];
+            vec![RenderRect::new(0., 0., width, size_info.height(), colors.sidebar, opacity)];
         for row in &rows {
             let SidebarRow::Card { position, line } = *row else { continue };
             let tab = &tabs[position];
@@ -267,7 +269,7 @@ impl Display {
             let card_width = width - 2. * margin;
             let card_height = CARD_LINES as f32 * cell_height + 2. * card_padding;
             let color = if tab.active { colors.active_card } else { colors.card };
-            rects.push(RenderRect::new(x, y, card_width, card_height, color, 1.));
+            rects.push(RenderRect::new(x, y, card_width, card_height, color, opacity));
 
             if tab.active {
                 rects.push(RenderRect::new(x, y, accent_width, card_height, tab.accent, 1.));
@@ -282,10 +284,12 @@ impl Display {
                     let color = if group == TabGroup::Ready { READY_COLOR } else { colors.detail };
                     let text = format!("{} {count}", group.label());
                     let bg = colors.sidebar;
-                    self.draw_sidebar_text(&size_info, line, TEXT_COLUMN, &text, color, bg);
+                    let point = (line, TEXT_COLUMN);
+                    self.draw_sidebar_text(&size_info, point, &text, color, bg);
                 },
                 SidebarRow::Card { position, line } => {
-                    self.draw_tab_card(&size_info, position, line, &tabs[position], &colors);
+                    let tab = &tabs[position];
+                    self.draw_tab_card(&size_info, position, line, tab, &colors);
                 },
             }
         }
@@ -305,29 +309,33 @@ impl Display {
 
         // Title row: icon, app name and tab shortcut.
         let icon = tab.icon.to_string();
-        self.draw_sidebar_text(size_info, line, TEXT_COLUMN, &icon, tab.accent, bg);
+        self.draw_sidebar_text(size_info, (line, TEXT_COLUMN), &icon, tab.accent, bg);
 
         let shortcut = if index < 9 { format!("⌘{}", index + 1) } else { String::new() };
         let mut shortcut_column = last_column - text_width(&shortcut);
-        self.draw_sidebar_text(size_info, line, shortcut_column, &shortcut, colors.detail, bg);
+        let point = (line, shortcut_column);
+        self.draw_sidebar_text(size_info, point, &shortcut, colors.detail, bg);
 
         // Mark tabs waiting to be read.
         if tab.group == TabGroup::Ready {
             shortcut_column -= 2;
-            self.draw_sidebar_text(size_info, line, shortcut_column, "●", READY_COLOR, bg);
+            let point = (line, shortcut_column);
+            self.draw_sidebar_text(size_info, point, "●", READY_COLOR, bg);
         }
 
         let title_column = TEXT_COLUMN + 2;
         let title = truncate(&tab.title, shortcut_column.saturating_sub(title_column + 1));
         let title_color = if tab.active { colors.active_title } else { colors.title };
-        self.draw_sidebar_text(size_info, line, title_column, &title, title_color, bg);
+        let point = (line, title_column);
+        self.draw_sidebar_text(size_info, point, &title, title_color, bg);
 
         // Preview of the focused pane.
         let preview_width = last_column - TEXT_COLUMN;
         for (offset, text) in tab.preview.iter().take(PREVIEW_LINES).enumerate() {
             let text = truncate(text, preview_width);
             let line = line + 1 + offset;
-            self.draw_sidebar_text(size_info, line, TEXT_COLUMN, &text, colors.preview, bg);
+            let point = (line, TEXT_COLUMN);
+            self.draw_sidebar_text(size_info, point, &text, colors.preview, bg);
         }
 
         // Working directory and status.
@@ -335,19 +343,19 @@ impl Display {
         let status_column = last_column - text_width(&tab.status);
         let status_color = if tab.group == TabGroup::Ready { READY_COLOR } else { colors.detail };
         let status = &tab.status;
-        self.draw_sidebar_text(size_info, detail_line, status_column, status, status_color, bg);
+        let point = (detail_line, status_column);
+        self.draw_sidebar_text(size_info, point, status, status_color, bg);
 
         let directory_width = status_column.saturating_sub(TEXT_COLUMN + 1);
         let directory = truncate_start(&tab.working_directory, directory_width);
-        self.draw_sidebar_text(size_info, detail_line, TEXT_COLUMN, &directory, colors.detail, bg);
+        let point = (detail_line, TEXT_COLUMN);
+        self.draw_sidebar_text(size_info, point, &directory, colors.detail, bg);
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn draw_sidebar_text(
         &mut self,
         size_info: &SizeInfo,
-        line: usize,
-        column: usize,
+        point: (usize, usize),
         text: &str,
         fg: Rgb,
         bg: Rgb,
@@ -356,8 +364,13 @@ impl Display {
             return;
         }
 
-        let point = Point::new(line, Column(column));
-        self.renderer.draw_string(point, fg, bg, text.chars(), size_info, &mut self.glyph_cache);
+        // The panel behind the text already carries the window's translucency.
+        let transparent = 0.;
+
+        let point = Point::new(point.0, Column(point.1));
+        let glyph_cache = &mut self.glyph_cache;
+        let chars = text.chars();
+        self.renderer.draw_string_alpha(point, fg, bg, transparent, chars, size_info, glyph_cache);
     }
 }
 

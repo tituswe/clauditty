@@ -74,7 +74,7 @@ impl Default for WindowConfig {
             blur: true,
             embed: Default::default(),
             padding: Default::default(),
-            opacity: Percentage::new(0.92),
+            opacity: Percentage::new(0.8),
             position: Default::default(),
             identity: Default::default(),
             dimensions: Default::default(),
