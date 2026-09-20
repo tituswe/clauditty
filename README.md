@@ -12,7 +12,8 @@ It comes with sensible defaults and a flexible [config](#configuration). See the
 ## Tabs and panes
 
 Tabs live in a sidebar on the left. Agent tabs run Claude Code. Terminal tabs
-and split panes run your shell. The focused pane has an orange border.
+and split panes run your shell, and a new window starts with one. The focused
+pane has an orange border.
 
 Each tab card shows the app in the focused pane, a preview of its last lines
 and its working directory.

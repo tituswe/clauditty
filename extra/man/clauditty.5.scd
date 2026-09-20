@@ -622,7 +622,7 @@ This section documents the *[tabs]* table of the configuration file.
 
 *command* = _"<string>"_
 
-	Command run by new agent tabs and the first tab of a window. It runs in an
+	Command run by new agent tabs. It runs in an
 	interactive login shell, so it's found on your _$PATH_. When the command
 	exits, the pane keeps running your shell.
 

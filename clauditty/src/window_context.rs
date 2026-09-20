@@ -265,11 +265,8 @@ impl WindowContext {
         match session.filter(|session| !session.tabs.is_empty()) {
             Some(session) => window_context.restore(session),
             None => {
-                // A command passed on the CLI replaces the tab command in the first tab.
-                let mut pty_config = match options.terminal_options.command() {
-                    Some(_) => window_context.config.pty_config(),
-                    None => window_context.tab_pty_config(None),
-                };
+                // New windows start with a terminal, like any other terminal emulator.
+                let mut pty_config = window_context.config.pty_config();
                 options.terminal_options.override_pty_config(&mut pty_config);
 
                 window_context.open_tab(&pty_config)?;
