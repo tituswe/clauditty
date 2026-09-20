@@ -70,6 +70,9 @@ pub enum TabSelection {
     Last,
 }
 
+/// Corner radius of the focused pane's border, in points.
+const PANE_CORNER_RADIUS: f32 = 6.;
+
 /// Height of the macOS title bar in points.
 const TITLE_BAR_HEIGHT: f32 = 28.;
 
@@ -429,6 +432,7 @@ impl WindowContext {
             rect: pane.rect,
             width: pane_border_width(scale_factor),
             color: pane.harness().accent_color(),
+            radius: (PANE_CORNER_RADIUS * scale_factor).round(),
         });
 
         let sidebar_tabs = self.sidebar_tabs();

@@ -83,6 +83,8 @@ pub struct PaneBorder {
     pub rect: Rect,
     pub width: f32,
     pub color: Rgb,
+    /// Radius of the rounded corners.
+    pub radius: f32,
 }
 
 /// A row of the sidebar, starting at `line`.
@@ -222,14 +224,8 @@ impl Display {
             })
             .collect();
 
-        if let Some(PaneBorder { rect, width: border, color }) = border {
-            let Rect { x, y, width, height } = rect;
-            window_rects.extend([
-                RenderRect::new(x, y, width, border, color, 1.),
-                RenderRect::new(x, y + height - border, width, border, color, 1.),
-                RenderRect::new(x, y, border, height, color, 1.),
-                RenderRect::new(x + width - border, y, border, height, color, 1.),
-            ]);
+        if let Some(PaneBorder { rect, width, color, radius }) = border {
+            window_rects.extend(rounded_border(rect, width, radius, color));
         }
 
         self.renderer.set_origin(0, 0);
@@ -385,6 +381,43 @@ struct SidebarColors {
     detail: Rgb,
 }
 
+/// Rectangles drawing a border with rounded corners.
+///
+/// Corners are stepped along a quarter circle, one row of pixels at a time.
+fn rounded_border(rect: Rect, width: f32, radius: f32, color: Rgb) -> Vec<RenderRect> {
+    let Rect { x, y, width: rect_width, height } = rect;
+    let radius = radius.min(rect_width / 2.).min(height / 2.).max(0.);
+
+    let straight_width = (rect_width - 2. * radius).max(0.);
+    let straight_height = (height - 2. * radius).max(0.);
+    let mut rects = vec![
+        RenderRect::new(x + radius, y, straight_width, width, color, 1.),
+        RenderRect::new(x + radius, y + height - width, straight_width, width, color, 1.),
+        RenderRect::new(x, y + radius, width, straight_height, color, 1.),
+        RenderRect::new(x + rect_width - width, y + radius, width, straight_height, color, 1.),
+    ];
+
+    for step in 0..radius as usize {
+        let offset = step as f32 + 0.5;
+        // Distance from the straight edge to the curve at this row.
+        let inset = radius - (radius * radius - (radius - offset).powi(2)).sqrt();
+
+        let top = y + step as f32;
+        let bottom = y + height - step as f32 - 1.;
+        let left = x + inset;
+        let right = x + rect_width - inset - width;
+
+        rects.extend([
+            RenderRect::new(left, top, width, 1., color, 1.),
+            RenderRect::new(right, top, width, 1., color, 1.),
+            RenderRect::new(left, bottom, width, 1., color, 1.),
+            RenderRect::new(right, bottom, width, 1., color, 1.),
+        ]);
+    }
+
+    rects
+}
+
 /// Blend from `from` towards `to` by `amount` between 0 and 1.
 fn mix(from: Rgb, to: Rgb, amount: f32) -> Rgb {
     from * (1. - amount) + to * amount
@@ -463,6 +496,23 @@ mod tests {
         // Second card, lines 10 to 13.
         assert_eq!(tab_at(&size_info, &groups, 5., 205.), Some(1));
         assert_eq!(tab_at(&size_info, &groups, 330., 205.), None);
+    }
+
+    #[test]
+    fn rounded_border_stays_inside() {
+        let rect = Rect::new(10., 20., 100., 80.);
+        let color = READY_COLOR;
+
+        for render_rect in rounded_border(rect, 2., 6., color) {
+            assert!(render_rect.x >= rect.x, "{render_rect:?}");
+            assert!(render_rect.y >= rect.y, "{render_rect:?}");
+            assert!(render_rect.x + render_rect.width <= rect.x + rect.width, "{render_rect:?}");
+            assert!(render_rect.y + render_rect.height <= rect.y + rect.height, "{render_rect:?}");
+        }
+
+        // Four edges plus four steps per corner row.
+        assert_eq!(rounded_border(rect, 2., 6., color).len(), 4 + 6 * 4);
+        assert_eq!(rounded_border(rect, 2., 0., color).len(), 4);
     }
 
     #[test]
