@@ -839,8 +839,9 @@ impl Display {
         self.damage_tracker.damage_selection(selection_range, display_offset);
 
         // Fill the pane with its background, which applications can change.
-        let background_rect =
-            RenderRect::new(0., 0., size_info.width(), size_info.height(), background_color, 1.);
+        let opacity = config.window_opacity();
+        let (width, height) = (size_info.width(), size_info.height());
+        let background_rect = RenderRect::new(0., 0., width, height, background_color, opacity);
         self.renderer.draw_rects(&size_info, &metrics, vec![background_rect]);
 
         let mut lines = RenderLines::new();

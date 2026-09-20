@@ -71,10 +71,10 @@ impl Default for WindowConfig {
     fn default() -> Self {
         Self {
             dynamic_title: true,
-            blur: Default::default(),
+            blur: true,
             embed: Default::default(),
             padding: Default::default(),
-            opacity: Default::default(),
+            opacity: Percentage::new(0.92),
             position: Default::default(),
             identity: Default::default(),
             dimensions: Default::default(),

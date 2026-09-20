@@ -54,7 +54,7 @@ pub struct HintStartColors {
 impl Default for HintStartColors {
     fn default() -> Self {
         Self {
-            foreground: CellRgb::Rgb(Rgb::new(0x0d, 0x11, 0x17)),
+            foreground: CellRgb::Rgb(Rgb::new(0x01, 0x04, 0x09)),
             background: CellRgb::Rgb(Rgb::new(0xd2, 0x99, 0x22)),
         }
     }
@@ -69,7 +69,7 @@ pub struct HintEndColors {
 impl Default for HintEndColors {
     fn default() -> Self {
         Self {
-            foreground: CellRgb::Rgb(Rgb::new(0x0d, 0x11, 0x17)),
+            foreground: CellRgb::Rgb(Rgb::new(0x01, 0x04, 0x09)),
             background: CellRgb::Rgb(Rgb::new(0xff, 0x7b, 0x72)),
         }
     }
@@ -141,7 +141,7 @@ impl Default for FocusedMatchColors {
     fn default() -> Self {
         Self {
             background: CellRgb::Rgb(Rgb::new(0xd2, 0x99, 0x22)),
-            foreground: CellRgb::Rgb(Rgb::new(0x0d, 0x11, 0x17)),
+            foreground: CellRgb::Rgb(Rgb::new(0x01, 0x04, 0x09)),
         }
     }
 }
@@ -156,7 +156,7 @@ impl Default for MatchColors {
     fn default() -> Self {
         Self {
             background: CellRgb::Rgb(Rgb::new(0xff, 0x7b, 0x72)),
-            foreground: CellRgb::Rgb(Rgb::new(0x0d, 0x11, 0x17)),
+            foreground: CellRgb::Rgb(Rgb::new(0x01, 0x04, 0x09)),
         }
     }
 }
@@ -179,7 +179,7 @@ pub struct PrimaryColors {
 impl Default for PrimaryColors {
     fn default() -> Self {
         PrimaryColors {
-            background: Rgb::new(0x0d, 0x11, 0x17),
+            background: Rgb::new(0x01, 0x04, 0x09),
             foreground: Rgb::new(0xe6, 0xed, 0xf3),
             bright_foreground: Default::default(),
             dim_foreground: Default::default(),

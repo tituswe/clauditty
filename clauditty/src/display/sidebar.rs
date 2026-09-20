@@ -33,6 +33,9 @@ const HEADER_LINES: usize = 2;
 /// First column of text on a card, leaving room for the accent bar.
 const TEXT_COLUMN: usize = 2;
 
+/// Space taken by the window buttons, in points.
+const WINDOW_BUTTONS_WIDTH: f32 = 82.;
+
 /// Color marking tabs ready for the user.
 const READY_COLOR: Rgb = Rgb::new(0xd9, 0x77, 0x57);
 
@@ -147,6 +150,41 @@ pub fn display_path(path: &Path, home: Option<&Path>) -> String {
 }
 
 impl Display {
+    /// Draw the app name in the title bar, right of the window buttons.
+    pub fn draw_title_bar(&mut self, title: &str, top: f32, scale_factor: f32, opacity: f32) {
+        let window_size = self.window_size_info;
+        let cell_height = window_size.cell_height();
+        if top < cell_height {
+            return;
+        }
+
+        let size_info = SizeInfo::new(
+            window_size.width(),
+            window_size.height(),
+            window_size.cell_width(),
+            cell_height,
+            (WINDOW_BUTTONS_WIDTH * scale_factor).round(),
+            ((top - cell_height) / 2.).round(),
+            false,
+        );
+
+        let background = self.colors[NamedColor::Background as usize];
+        let foreground = self.colors[NamedColor::Foreground as usize];
+        let color = mix(background, foreground, 0.75);
+
+        self.renderer.set_origin(0, 0);
+        self.renderer.resize(&size_info);
+        self.renderer.draw_string_alpha(
+            Point::new(0, Column(0)),
+            color,
+            background,
+            opacity,
+            title.chars(),
+            &size_info,
+            &mut self.glyph_cache,
+        );
+    }
+
     /// Draw the sidebar, the dividers between panes and the focused pane's border.
     ///
     /// The sidebar starts `top` pixels below the top of the window, leaving room for the title bar.

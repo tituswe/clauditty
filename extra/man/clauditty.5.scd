@@ -134,13 +134,13 @@ This section documents the *[window]* table of the configuration file.
 	Background opacity as a floating point number from _0.0_ to _1.0_. The value
 	_0.0_ is completely transparent and _1.0_ is opaque.
 
-	Default: _1.0_
+	Default: _0.92_
 
 *blur* = _true_ | _false_ # _(works on macOS/KDE Wayland)_
 
 	Request compositor to blur content behind transparent windows.
 
-	Default: _false_
+	Default: _true_
 
 *startup_mode* = _"Windowed"_ | _"Maximized"_ | _"Fullscreen"_ | _"SimpleFullscreen"_
 
@@ -307,7 +307,7 @@ Colors are specified using their hexadecimal values with a _#_ prefix: _#RRGGBB_
 
 	*background* = _"<string>"_
 
-		Default: _"#0d1117"_
+		Default: _"#010409"_
 
 	*dim_foreground* = _"<string>"_
 
@@ -352,11 +352,11 @@ Colors are specified using their hexadecimal values with a _#_ prefix: _#RRGGBB_
 
 	*matches* = { foreground = _"<string>"_, background = _"<string>"_ }
 
-		Default: { foreground = _"#0d1117"_, background = _"#ff7b72"_ }
+		Default: { foreground = _"#010409"_, background = _"#ff7b72"_ }
 
 	*focused_match* = { foreground = _"<string>"_, background = _"<string>"_ }
 
-		Default: { foreground = _"#0d1117"_, background = _"#d29922"_ }
+		Default: { foreground = _"#010409"_, background = _"#d29922"_ }
 
 *hints*
 
@@ -369,7 +369,7 @@ Colors are specified using their hexadecimal values with a _#_ prefix: _#RRGGBB_
 		Allowed values are hexadecimal colors like _#ff00ff_, or
 		_CellForeground_/_CellBackground_, which references the affected cell.
 
-		Default: { foreground = _"#0d1117"_, background = _"#d29922"_ }
+		Default: { foreground = _"#010409"_, background = _"#d29922"_ }
 
 	*end* = { foreground = _"<string>"_, background = _"<string>"_ }
 
@@ -378,7 +378,7 @@ Colors are specified using their hexadecimal values with a _#_ prefix: _#RRGGBB_
 		Allowed values are hexadecimal colors like _#ff00ff_, or
 		_CellForeground_/_CellBackground_, which references the affected cell.
 
-		Default: { foreground = _"#0d1117"_, background = _"#ff7b72"_ }
+		Default: { foreground = _"#010409"_, background = _"#ff7b72"_ }
 
 *line_indicator* = { foreground = _"<string>"_, background = _"<string>"_ }
 
@@ -394,7 +394,7 @@ Colors are specified using their hexadecimal values with a _#_ prefix: _#RRGGBB_
 	Color used for the footer bar on the bottom, used by search regex input,
 	hyperlink URI preview, etc.
 
-	Default: { foreground = _"#0d1117"_, background = _"#e6edf3"_ }
+	Default: { foreground = _"#010409"_, background = _"#e6edf3"_ }
 
 *selection* = { text = _"<string>"_, background = _"<string>"_ }
 
