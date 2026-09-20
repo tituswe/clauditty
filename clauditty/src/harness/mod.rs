@@ -3,7 +3,8 @@
 //! A harness decides how a pane is detected, named, colored, previewed and tracked. To support a
 //! new agent, add a type implementing [`Harness`] and list it in [`AGENTS`].
 
-use std::path::Path;
+use std::collections::HashSet;
+use std::path::{Path, PathBuf};
 
 use crate::display::color::Rgb;
 
@@ -66,6 +67,17 @@ pub trait Harness: Sync {
 
     /// How to tell when the harness is working.
     fn activity_rule(&self) -> ActivityRule;
+
+    /// Command reopening the harness where it left off, or `None` for a plain shell.
+    ///
+    /// `taken` holds the saved sessions already claimed by other panes.
+    fn restore_command(
+        &self,
+        _working_directory: Option<&Path>,
+        _taken: &mut HashSet<PathBuf>,
+    ) -> Option<String> {
+        None
+    }
 
     /// Lines to preview on the tab, picked from the lines on screen from top to bottom.
     fn preview(&self, screen: &[String], max_lines: usize) -> Vec<String> {

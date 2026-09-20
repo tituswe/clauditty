@@ -104,6 +104,7 @@ pub trait ActionContext<T: EventListener> {
     fn split_pane(&mut self, _direction: SplitDirection) {}
     fn close_pane(&mut self) {}
     fn focus_pane(&mut self, _direction: FocusDirection) {}
+    fn resize_pane(&mut self, _direction: FocusDirection) {}
     fn dismiss_tab(&mut self) {}
     fn close_window(&mut self) {}
     fn select_tab(&mut self, _selection: TabSelection) {}
@@ -422,6 +423,10 @@ impl<T: EventListener> Execute<T> for Action {
             Action::SplitDown => ctx.split_pane(SplitDirection::Down),
             Action::ClosePane => ctx.close_pane(),
             Action::DismissTab => ctx.dismiss_tab(),
+            Action::ResizePaneLeft => ctx.resize_pane(FocusDirection::Left),
+            Action::ResizePaneRight => ctx.resize_pane(FocusDirection::Right),
+            Action::ResizePaneUp => ctx.resize_pane(FocusDirection::Up),
+            Action::ResizePaneDown => ctx.resize_pane(FocusDirection::Down),
             Action::FocusPaneLeft => ctx.focus_pane(FocusDirection::Left),
             Action::FocusPaneRight => ctx.focus_pane(FocusDirection::Right),
             Action::FocusPaneUp => ctx.focus_pane(FocusDirection::Up),

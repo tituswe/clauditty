@@ -1,11 +1,11 @@
 //! Terminal window context.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fs::File;
 use std::io::Write;
 use std::mem;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::time::Instant;
 
@@ -38,12 +38,13 @@ use crate::display::sidebar::{self, PaneBorder, SidebarTab, TabGroup};
 use crate::display::window::Window;
 use crate::display::{Display, SizeInfo};
 use crate::event::{ActionContext, Event, EventType, Mouse, TouchPurpose};
-use crate::layout::{self, FocusDirection, Layout, PaneId, Rect, SplitDirection};
+use crate::layout::{self, Divider, FocusDirection, Layout, PaneId, Rect, SplitDirection};
 #[cfg(unix)]
 use crate::logging::LOG_TARGET_IPC_CONFIG;
 use crate::message_bar::MessageBuffer;
 use crate::pane::Pane;
 use crate::scheduler::Scheduler;
+use crate::session::{self, PaneSession, Session, TabSession};
 use crate::{input, renderer};
 
 /// Change to the tabs or panes of a window, requested by an action.
@@ -57,6 +58,7 @@ pub enum PaneCommand {
     ClosePane,
     CloseWindow,
     Focus(FocusDirection),
+    Resize(FocusDirection),
     DismissTab,
     SelectTab(TabSelection),
 }
@@ -69,6 +71,12 @@ pub enum TabSelection {
     Index(usize),
     Last,
 }
+
+/// Share of a split moved by one resize step.
+const RESIZE_STEP: f32 = 0.03;
+
+/// Distance from a divider where it can be grabbed, in points.
+const DIVIDER_GRAB_WIDTH: f32 = 6.;
 
 /// Corner radius of the focused pane's border, in points.
 const PANE_CORNER_RADIUS: f32 = 6.;
@@ -101,8 +109,12 @@ pub struct WindowContext {
     cursor_position: PhysicalPosition<f64>,
     /// Whether the mouse is over the focused pane.
     cursor_in_focused_pane: bool,
+    /// Divider being dragged to resize panes.
+    dragged_divider: Option<Divider>,
     window_focused: bool,
     should_close: bool,
+    /// Whether the session on disk is out of date.
+    session_dirty: bool,
     cursor_blink_timed_out: bool,
     prev_bell_cmd: Option<Instant>,
     modifiers: Modifiers,
@@ -121,6 +133,7 @@ impl WindowContext {
         proxy: EventLoopProxy<Event>,
         config: Rc<UiConfig>,
         mut options: WindowOptions,
+        session: Option<Session>,
     ) -> Result<Self, Box<dyn Error>> {
         let raw_display_handle = event_loop.display_handle().unwrap().as_raw();
 
@@ -160,7 +173,7 @@ impl WindowContext {
 
         let display = Display::new(window, gl_context, &config, false)?;
 
-        Self::new(display, config, options, proxy)
+        Self::new(display, config, options, proxy, session)
     }
 
     /// Create additional context with the graphics platform other windows are using.
@@ -200,7 +213,7 @@ impl WindowContext {
 
         let display = Display::new(window, gl_context, &config, tabbed)?;
 
-        let mut window_context = Self::new(display, config, options, proxy)?;
+        let mut window_context = Self::new(display, config, options, proxy, None)?;
 
         // Set the config overrides at startup.
         //
@@ -216,6 +229,7 @@ impl WindowContext {
         config: Rc<UiConfig>,
         options: WindowOptions,
         proxy: EventLoopProxy<Event>,
+        session: Option<Session>,
     ) -> Result<Self, Box<dyn Error>> {
         let preserve_title = options.window_identity.title.is_some();
 
@@ -231,8 +245,10 @@ impl WindowContext {
             pane_commands: Default::default(),
             cursor_position: Default::default(),
             cursor_in_focused_pane: Default::default(),
+            dragged_divider: Default::default(),
             window_focused: Default::default(),
             should_close: Default::default(),
+            session_dirty: Default::default(),
             cursor_blink_timed_out: Default::default(),
             prev_bell_cmd: Default::default(),
             message_buffer: Default::default(),
@@ -245,14 +261,24 @@ impl WindowContext {
             dirty: Default::default(),
         };
 
-        // A command passed on the CLI replaces the tab command in the first tab.
-        let mut pty_config = match options.terminal_options.command() {
-            Some(_) => window_context.config.pty_config(),
-            None => window_context.tab_pty_config(None),
-        };
-        options.terminal_options.override_pty_config(&mut pty_config);
+        // Reopen the tabs of the last run, or start a fresh one.
+        match session.filter(|session| !session.tabs.is_empty()) {
+            Some(session) => window_context.restore(session),
+            None => {
+                // A command passed on the CLI replaces the tab command in the first tab.
+                let mut pty_config = match options.terminal_options.command() {
+                    Some(_) => window_context.config.pty_config(),
+                    None => window_context.tab_pty_config(None),
+                };
+                options.terminal_options.override_pty_config(&mut pty_config);
 
-        window_context.open_tab(&pty_config)?;
+                window_context.open_tab(&pty_config)?;
+            },
+        }
+
+        if window_context.tabs.is_empty() {
+            return Err("no tabs could be opened".into());
+        }
 
         info!(
             "PTY dimensions: {:?} x {:?}",
@@ -421,7 +447,12 @@ impl WindowContext {
         // Draw the sidebar, its border and the dividers between panes.
         let window_size = self.display.window_size_info;
         let gap = self.divider_width();
-        let mut dividers = tab.layout.dividers(self.terminal_area(), gap);
+        let mut dividers: Vec<_> = tab
+            .layout
+            .dividers(self.terminal_area(), gap)
+            .into_iter()
+            .map(|divider| divider.rect)
+            .collect();
         let top = self.title_bar_height();
         let sidebar_width = sidebar::sidebar_width(&window_size);
         dividers.push(Rect::new(sidebar_width, top, gap, window_size.height() - top));
@@ -630,6 +661,28 @@ impl WindowContext {
         match window_event {
             WindowEvent::CursorMoved { device_id, position } => {
                 self.cursor_position = position;
+                let (x, y) = (position.x as f32, position.y as f32);
+
+                // Dragging a divider resizes the panes around it.
+                if let Some(divider) = self.dragged_divider.clone() {
+                    let ratio = divider.ratio_at((x, y), self.divider_width());
+                    if let Some(tab) = self.tabs.get_mut(self.active_tab) {
+                        tab.layout.set_ratio(&divider.path, ratio);
+                    }
+                    self.session_dirty = true;
+                    self.update_layout();
+                    return Vec::new();
+                }
+
+                // Show that dividers can be dragged.
+                if let Some(divider) = self.divider_at(x, y) {
+                    let cursor = match divider.direction {
+                        SplitDirection::Right => CursorIcon::ColResize,
+                        SplitDirection::Down => CursorIcon::RowResize,
+                    };
+                    self.display.window.set_mouse_cursor(cursor);
+                    return Vec::new();
+                }
 
                 let Some(rect) = self.panes.get(&focused).map(|pane| pane.rect) else {
                     return Vec::new();
@@ -671,6 +724,12 @@ impl WindowContext {
                     return Vec::new();
                 }
 
+                // Grabbing a divider starts a resize.
+                if let Some(divider) = self.divider_at(x, y) {
+                    self.dragged_divider = Some(divider);
+                    return Vec::new();
+                }
+
                 let Some(target) = self.pane_at(x, y) else { return Vec::new() };
                 let rect = self.panes[&target].rect;
 
@@ -694,6 +753,12 @@ impl WindowContext {
                     (target, Self::cursor_moved(window_id, device_id, self.cursor_position, rect)),
                     (target, WinitEvent::WindowEvent { window_id, event: window_event }),
                 ]
+            },
+            WindowEvent::MouseInput { state: ElementState::Released, .. }
+                if self.dragged_divider.is_some() =>
+            {
+                self.dragged_divider = None;
+                Vec::new()
             },
             WindowEvent::Focused(is_focused) => {
                 self.window_focused = is_focused;
@@ -755,11 +820,17 @@ impl WindowContext {
                     Ok(())
                 },
                 PaneCommand::CloseWindow => {
+                    // Quitting keeps the tabs for the next run.
+                    session::save(&self.session());
                     self.should_close = true;
                     Ok(())
                 },
                 PaneCommand::Focus(direction) => {
                     self.move_focus(direction);
+                    Ok(())
+                },
+                PaneCommand::Resize(direction) => {
+                    self.resize_focused_pane(direction);
                     Ok(())
                 },
                 PaneCommand::DismissTab => {
@@ -776,6 +847,76 @@ impl WindowContext {
                 error!("Could not open pane: {err}");
             }
         }
+    }
+
+    /// Everything needed to reopen this window's tabs and panes.
+    pub fn session(&mut self) -> Session {
+        let mut taken = HashSet::new();
+        let mut tabs = Vec::with_capacity(self.tabs.len());
+
+        for index in 0..self.tabs.len() {
+            let tab = &self.tabs[index];
+            let (layout, focused) = (tab.layout.clone(), tab.focused);
+
+            let mut panes = Vec::new();
+            for pane_id in layout.panes() {
+                let Some(pane) = self.panes.get_mut(&pane_id) else { continue };
+                let harness = pane.harness();
+                let working_directory = pane.working_directory().map(Path::to_path_buf);
+                let command = harness.restore_command(working_directory.as_deref(), &mut taken);
+                panes.push((pane_id, PaneSession { command, working_directory }));
+            }
+
+            tabs.push(TabSession { layout, focused, panes });
+        }
+
+        Session { tabs, active_tab: self.active_tab }
+    }
+
+    /// The session to store, if the tabs or panes changed since the last call.
+    pub fn take_session_update(&mut self) -> Option<Session> {
+        mem::take(&mut self.session_dirty).then(|| self.session())
+    }
+
+    /// Reopen the tabs and panes of a saved session.
+    fn restore(&mut self, session: Session) {
+        for tab in session.tabs {
+            let rects = tab.layout.rects(self.terminal_area(), self.divider_width());
+
+            let mut panes: HashMap<PaneId, Pane> = HashMap::default();
+            for (pane_id, pane) in &tab.panes {
+                let Some((_, rect)) = rects.iter().find(|(id, _)| id == pane_id) else { continue };
+                let pty_config =
+                    self.pty_config(pane.command.as_deref(), pane.working_directory.clone());
+
+                match self.spawn_pane(*pane_id, &pty_config, *rect) {
+                    Ok(pane) => {
+                        panes.insert(*pane_id, pane);
+                    },
+                    Err(err) => error!("Could not restore pane: {err}"),
+                }
+            }
+
+            // Drop panes whose shell could not start.
+            let mut layout = Some(tab.layout.clone());
+            for pane_id in tab.layout.panes().into_iter().filter(|id| !panes.contains_key(id)) {
+                layout = layout.and_then(|layout| layout.remove(pane_id));
+            }
+            let Some(layout) = layout else { continue };
+
+            let focused = if panes.contains_key(&tab.focused) {
+                tab.focused
+            } else {
+                layout.panes()[0]
+            };
+
+            self.next_pane_id = self.next_pane_id.max(layout.panes().iter().map(|id| id.0).max().unwrap_or(0));
+            self.panes.extend(panes);
+            self.tabs.push(Tab { layout, focused });
+        }
+
+        self.active_tab = session.active_tab.min(self.tabs.len().saturating_sub(1));
+        self.on_layout_change();
     }
 
     /// Open a new tab with a single pane and switch to it.
@@ -862,6 +1003,8 @@ impl WindowContext {
         }
 
         if self.tabs.is_empty() {
+            // Closing every tab means the user wants none of them back.
+            session::save(&Session::default());
             self.should_close = true;
         }
 
@@ -970,6 +1113,7 @@ impl WindowContext {
 
         let mut changed = false;
         let mut busy = false;
+        let mut became_ready = false;
         for (index, tab) in self.tabs.iter().enumerate() {
             // Work finishing in the tab the user is looking at doesn't need their attention.
             let visible = watching && index == self.active_tab;
@@ -978,9 +1122,18 @@ impl WindowContext {
                 let Some(pane) = self.panes.get_mut(&pane_id) else { continue };
                 let rule = pane.harness().activity_rule();
                 let shell_in_front = pane.process().shell_in_front();
-                changed |= pane.activity.update(now, rule, shell_in_front, visible);
+
+                if pane.activity.update(now, rule, shell_in_front, visible) {
+                    changed = true;
+                    became_ready |= matches!(pane.activity.activity(), Activity::Ready { .. });
+                }
                 busy |= pane.activity.activity() != Activity::Idle;
             }
+        }
+
+        // Point the user at work waiting for them in another app.
+        if became_ready && !self.window_focused && self.config.alerts.bounce {
+            self.display.window.request_attention();
         }
 
         // Redraw for new states, and to keep spinners and timers moving.
@@ -990,6 +1143,13 @@ impl WindowContext {
                 self.display.window.request_redraw();
             }
         }
+    }
+
+    /// Number of tabs waiting to be read.
+    pub fn ready_tabs(&self) -> usize {
+        (0..self.tabs.len())
+            .filter(|index| matches!(self.tab_activity(*index), Activity::Ready { .. }))
+            .count()
     }
 
     /// Tab indices in sidebar order: ready tabs oldest first, then working, then idle.
@@ -1025,6 +1185,28 @@ impl WindowContext {
         }
     }
 
+    /// Move the divider next to the focused pane one step.
+    fn resize_focused_pane(&mut self, direction: FocusDirection) {
+        let Some(focused) = self.focused_pane_id() else { return };
+        let split_direction = match direction {
+            FocusDirection::Left | FocusDirection::Right => SplitDirection::Right,
+            FocusDirection::Up | FocusDirection::Down => SplitDirection::Down,
+        };
+
+        let Some(tab) = self.tabs.get_mut(self.active_tab) else { return };
+        let Some((path, _)) = tab.layout.split_containing(focused, split_direction) else { return };
+        let Some(ratio) = tab.layout.ratio_mut(&path).copied() else { return };
+
+        let step = match direction {
+            FocusDirection::Right | FocusDirection::Down => RESIZE_STEP,
+            FocusDirection::Left | FocusDirection::Up => -RESIZE_STEP,
+        };
+        tab.layout.set_ratio(&path, ratio + step);
+
+        self.session_dirty = true;
+        self.update_layout();
+    }
+
     /// Focus a pane in the active tab.
     fn focus_pane(&mut self, pane_id: PaneId) {
         if let Some(tab) = self.tabs.get_mut(self.active_tab) {
@@ -1037,6 +1219,7 @@ impl WindowContext {
     /// Resize panes and update focus after panes were added or removed.
     fn on_layout_change(&mut self) {
         self.display.pending_update.dirty = true;
+        self.session_dirty = true;
         self.on_focus_change();
     }
 
@@ -1158,12 +1341,17 @@ impl WindowContext {
 
     /// PTY options running the tab command, falling back to a shell once it exits.
     fn tab_pty_config(&self, working_directory: Option<PathBuf>) -> tty::Options {
+        self.pty_config(Some(&self.config.tabs.command), working_directory)
+    }
+
+    /// PTY options running `command`, falling back to a shell once it exits.
+    fn pty_config(&self, command: Option<&str>, working_directory: Option<PathBuf>) -> tty::Options {
         let mut pty_config = self.config.pty_config();
         if working_directory.is_some() {
             pty_config.working_directory = working_directory;
         }
 
-        let command = self.config.tabs.command.trim();
+        let command = command.unwrap_or_default().trim();
 
         #[cfg(not(windows))]
         if !command.is_empty() {
@@ -1194,6 +1382,18 @@ impl WindowContext {
 
     fn focused_pane_id(&self) -> Option<PaneId> {
         self.tabs.get(self.active_tab).map(|tab| tab.focused)
+    }
+
+    /// Divider of the active tab at a point in window pixels.
+    fn divider_at(&self, x: f32, y: f32) -> Option<Divider> {
+        let gap = self.divider_width();
+        let grab = (DIVIDER_GRAB_WIDTH * self.display.window.scale_factor as f32).round();
+
+        let tab = self.tabs.get(self.active_tab)?;
+        tab.layout
+            .dividers(self.terminal_area(), gap)
+            .into_iter()
+            .find(|divider| divider.contains(x, y, grab))
     }
 
     /// Pane of the active tab at a point in window pixels.

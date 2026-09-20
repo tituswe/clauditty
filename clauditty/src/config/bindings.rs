@@ -238,6 +238,18 @@ pub enum Action {
     /// Mark the active tab as read and go to the first other tab in the sidebar.
     DismissTab,
 
+    /// Move the divider of the focused pane's split to the left.
+    ResizePaneLeft,
+
+    /// Move the divider of the focused pane's split to the right.
+    ResizePaneRight,
+
+    /// Move the divider of the focused pane's split up.
+    ResizePaneUp,
+
+    /// Move the divider of the focused pane's split down.
+    ResizePaneDown,
+
     /// Focus the pane to the left.
     FocusPaneLeft,
 
@@ -619,6 +631,10 @@ pub fn platform_key_bindings() -> Vec<KeyBinding> {
         ArrowRight, ModifiersState::SUPER;                                     Action::FocusPaneRight;
         ArrowUp,    ModifiersState::SUPER;                                     Action::FocusPaneUp;
         ArrowDown,  ModifiersState::SUPER;                                     Action::FocusPaneDown;
+        ArrowLeft,  ModifiersState::SUPER | ModifiersState::CONTROL;           Action::ResizePaneLeft;
+        ArrowRight, ModifiersState::SUPER | ModifiersState::CONTROL;           Action::ResizePaneRight;
+        ArrowUp,    ModifiersState::SUPER | ModifiersState::CONTROL;           Action::ResizePaneUp;
+        ArrowDown,  ModifiersState::SUPER | ModifiersState::CONTROL;           Action::ResizePaneDown;
         "]",    ModifiersState::SUPER | ModifiersState::SHIFT;                 Action::SelectNextTab;
         "[",    ModifiersState::SUPER | ModifiersState::SHIFT;                 Action::SelectPreviousTab;
         Tab,    ModifiersState::SUPER;                                         Action::SelectNextTab;

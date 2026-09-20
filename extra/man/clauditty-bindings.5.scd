@@ -535,6 +535,22 @@ configuration. See *clauditty*(5) for full configuration format documentation.
 :[
 :  _"DismissTab"_
 |  _"Left"_
+:  _"Command|Control"_
+:[
+:  _"ResizePaneLeft"_
+|  _"Right"_
+:  _"Command|Control"_
+:[
+:  _"ResizePaneRight"_
+|  _"Up"_
+:  _"Command|Control"_
+:[
+:  _"ResizePaneUp"_
+|  _"Down"_
+:  _"Command|Control"_
+:[
+:  _"ResizePaneDown"_
+|  _"Left"_
 :  _"Command"_
 :[
 :  _"FocusPaneLeft"_

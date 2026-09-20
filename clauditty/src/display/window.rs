@@ -23,7 +23,8 @@ use std::fmt::{self, Display, Formatter};
 #[cfg(target_os = "macos")]
 use {
     objc2::MainThreadMarker,
-    objc2_app_kit::{NSColorSpace, NSView},
+    objc2_app_kit::{NSApplication, NSColorSpace, NSView},
+    objc2_foundation::NSString,
     std::ffi::c_void,
     std::mem,
     winit::platform::macos::{OptionAsAlt, WindowAttributesExtMacOS, WindowExtMacOS},
@@ -379,6 +380,11 @@ impl Window {
         self.window.set_transparent(transparent);
     }
 
+    /// Ask the system to point the user at this window.
+    pub fn request_attention(&self) {
+        self.window.request_user_attention(Some(UserAttentionType::Informational));
+    }
+
     pub fn set_blur(&self, blur: bool) {
         self.window.set_blur(blur);
 
@@ -535,6 +541,19 @@ impl Window {
         view.window().unwrap().setHasShadow(has_shadows);
     }
 }
+
+/// Show how many tabs are ready on the app's icon.
+#[cfg(target_os = "macos")]
+pub fn set_dock_badge(count: usize) {
+    let Some(mtm) = MainThreadMarker::new() else { return };
+
+    let label = (count > 0).then(|| NSString::from_str(&count.to_string()));
+    let application = NSApplication::sharedApplication(mtm);
+    application.dockTile().setBadgeLabel(label.as_deref());
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn set_dock_badge(_count: usize) {}
 
 /// Strength of the blur behind a transparent window on macOS.
 #[cfg(target_os = "macos")]

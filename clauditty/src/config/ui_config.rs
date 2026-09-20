@@ -19,6 +19,7 @@ use clauditty_terminal::term::search::RegexSearch;
 use clauditty_terminal::tty::{Options as PtyOptions, Shell};
 
 use crate::config::LOG_TARGET_CONFIG;
+use crate::config::alerts::Alerts;
 use crate::config::bell::BellConfig;
 use crate::config::bindings::{
     self, Action, Binding, BindingKey, KeyBinding, KeyLocation, ModeWrapper, ModsWrapper,
@@ -89,6 +90,9 @@ pub struct UiConfig {
 
     /// Tab configuration.
     pub tabs: Tabs,
+
+    /// Alerts for tabs that need attention.
+    pub alerts: Alerts,
 
     /// Keyboard configuration.
     keyboard: Keyboard,

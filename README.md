@@ -41,15 +41,29 @@ once the prompt is back, if it ran for 5 seconds or more.
 | `Cmd+W`             | Close pane, or tab if last pane    |
 | `Cmd+Enter`         | Mark tab read, go to next tab      |
 | `Cmd+Arrow`         | Move to the pane in that direction |
+| `Cmd+Ctrl+Arrow`    | Resize the focused pane            |
 | `Cmd+1` to `Cmd+9`  | Switch tab                         |
 | `Cmd+Shift+[` / `]` | Previous / next tab                |
 
 `Cmd+Up` on the top pane goes to the previous tab, and `Cmd+Down` on the bottom
 pane goes to the next tab.
 
-Click a tab to switch to it, or a pane to focus it.
+Click a tab to switch to it, or a pane to focus it. Drag the line between panes
+to resize them.
 
 Change the agent tab command with `tabs.command` in the config.
+
+### Session restore
+
+Quitting stores your tabs, panes and their folders. The next run reopens them,
+and Claude Code tabs come back with `claude --resume`, so the conversation
+carries on. Closing every tab clears the stored session.
+
+### Alerts
+
+When a tab becomes ready while Clauditty is in the background, the Dock icon
+bounces and shows how many tabs are waiting. Turn either off with
+`alerts.bounce` and `alerts.badge`.
 
 ### Harnesses
 

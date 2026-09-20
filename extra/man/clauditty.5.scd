@@ -599,6 +599,23 @@ This section documents the *[cursor]* table of the configuration file.
 
 	Default: _0.15_
 
+# ALERTS
+
+This section documents the *[alerts]* table of the configuration file.
+
+*badge* = _true_ | _false_ # _(macOS only)_
+
+	Show the number of ready tabs on the Dock icon.
+
+	Default: _true_
+
+*bounce* = _true_ | _false_
+
+	Ask the system for attention when a tab becomes ready while the window is
+	in the background. On macOS the Dock icon bounces.
+
+	Default: _true_
+
 # TABS
 
 This section documents the *[tabs]* table of the configuration file.
@@ -613,6 +630,14 @@ This section documents the *[tabs]* table of the configuration file.
 	start a plain shell.
 
 	Default: _"claude"_
+
+# SESSION
+
+Clauditty stores its tabs, panes and their working directories when you quit,
+and reopens them on the next run. Claude Code tabs come back with
+_claude --resume_, so the conversation continues.
+
+Closing every tab clears the stored session, so nothing comes back.
 
 # TERMINAL
 
@@ -862,6 +887,14 @@ _https://docs.rs/winit/latest/winit/keyboard/enum.Key.html#variant.Dead_
 			Close the focused pane, closing the tab when it was the last pane.
 		*DismissTab*
 			Mark the active tab as read and go to the first other tab in the sidebar.
+		*ResizePaneLeft*
+			Move the divider of the focused pane's split to the left.
+		*ResizePaneRight*
+			Move the divider of the focused pane's split to the right.
+		*ResizePaneUp*
+			Move the divider of the focused pane's split up.
+		*ResizePaneDown*
+			Move the divider of the focused pane's split down.
 		*FocusPaneLeft*
 			Focus the pane to the left.
 		*FocusPaneRight*

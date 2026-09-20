@@ -54,7 +54,7 @@ use crate::daemon::foreground_process_path;
 use crate::daemon::spawn_daemon;
 use crate::display::color::Rgb;
 use crate::display::hint::HintMatch;
-use crate::display::window::{ImeInhibitor, Window};
+use crate::display::window::{self, ImeInhibitor, Window};
 use crate::display::{Display, Preedit, SizeInfo};
 use crate::input::{self, ActionContext as _, FONT_SIZE_STEP};
 use crate::layout::{FocusDirection, PaneId, SplitDirection};
@@ -63,6 +63,7 @@ use crate::message_bar::{Message, MessageBuffer};
 #[cfg(unix)]
 use crate::polling::ipc::{self, SocketReply};
 use crate::scheduler::{Scheduler, TimerId, Topic};
+use crate::session;
 use crate::window_context::{PaneCommand, TabSelection, WindowContext};
 
 /// How often panes are checked for finished work.
@@ -156,11 +157,20 @@ impl Processor {
         event_loop: &ActiveEventLoop,
         window_options: WindowOptions,
     ) -> Result<(), Box<dyn Error>> {
+        // Reopen the tabs from the last run, unless the CLI asks for a command.
+        let session = window_options
+            .terminal_options
+            .command()
+            .is_none()
+            .then(session::load)
+            .flatten();
+
         let window_context = WindowContext::initial(
             event_loop,
             self.proxy.clone(),
             self.config.clone(),
             window_options,
+            session,
         )?;
 
         self.gl_config = Some(window_context.display.gl_context().config());
@@ -215,6 +225,16 @@ impl Processor {
             Some(initial_window_error) => Err(initial_window_error),
             _ => result.map_err(Into::into),
         }
+    }
+
+    /// Show how many tabs are waiting on the app's icon.
+    fn update_dock_badge(&self) {
+        let ready = match self.config.alerts.badge {
+            true => self.windows.values().map(WindowContext::ready_tabs).sum(),
+            false => 0,
+        };
+
+        window::set_dock_badge(ready);
     }
 
     /// Drop windows whose last pane closed, exiting when no windows are left.
@@ -468,7 +488,14 @@ impl ApplicationHandler<Event> for Processor {
             (EventType::ActivityTick, Some(window_id)) => {
                 if let Some(window_context) = self.windows.get_mut(window_id) {
                     window_context.update_activity();
+
+                    // Keep the saved session in step with the window.
+                    if let Some(session) = window_context.take_session_update() {
+                        session::save(&session);
+                    }
                 }
+
+                self.update_dock_badge();
             },
             // NOTE: This event bypasses batching to minimize input latency.
             (EventType::Frame, Some(window_id)) => {
@@ -954,6 +981,10 @@ impl<'a, N: Notify + 'a, T: EventListener> input::ActionContext<T> for ActionCon
 
     fn focus_pane(&mut self, direction: FocusDirection) {
         self.pane_commands.push(PaneCommand::Focus(direction));
+    }
+
+    fn resize_pane(&mut self, direction: FocusDirection) {
+        self.pane_commands.push(PaneCommand::Resize(direction));
     }
 
     fn dismiss_tab(&mut self) {
